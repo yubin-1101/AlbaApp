@@ -1,0 +1,250 @@
+/* 날짜 셀 기본 스타일 */
+.day-cell {
+  min-height: 120px;
+  padding: 15px;
+  border-radius: 18px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.day-number {
+  color: black;
+  font-size: 20px;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.day-cell::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #667eea, #764ba2);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.day-cell:hover {
+  transform: translateY(-4px) scale(1.03);
+  background: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 12px 30px rgba(102, 126, 234, 0.25);
+  border-color: rgba(102, 126, 234, 0.4);
+}
+
+.day-cell:hover::before {
+  opacity: 1;
+}
+
+/* 오늘 날짜 강조 */
+.day-cell.today {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.25), rgba(118, 75, 162, 0.25));
+  border-color: #667eea;
+  box-shadow: 0 6px 25px rgba(102, 126, 234, 0.4);
+  transform: scale(1.02);
+}
+
+.day-cell.today .day-number {
+  color: #667eea;
+  font-weight: 800;
+}
+
+/* 빈 날짜 */
+.day-cell.empty {
+  background: transparent;
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+  cursor: default;
+}
+
+.day-cell.empty:hover {
+  transform: none;
+  background: transparent;
+  box-shadow: none;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.day-cell.empty::before {
+  display: none;
+}
+
+/* 작업 상태별 스타일 */
+.day-cell.work-completed {
+  background: linear-gradient(135deg, rgba(72, 187, 120, 0.25), rgba(56, 178, 172, 0.25));
+  border-color: #48bb78;
+}
+
+.day-cell.work-completed .day-number {
+  color: #48bb78;
+}
+
+.day-cell.work-completed::before {
+  background: linear-gradient(90deg, #48bb78, #38b2ac);
+  opacity: 1;
+}
+
+.day-cell.work-in-progress {
+  background: linear-gradient(135deg, rgba(237, 137, 54, 0.25), rgba(245, 101, 101, 0.25));
+  border-color: #ed8936;
+  animation: pulse 2s infinite;
+}
+
+.day-cell.work-in-progress .day-number {
+  color: #ed8936;
+}
+
+.day-cell.work-in-progress::before {
+  background: linear-gradient(90deg, #ed8936, #f56565);
+  opacity: 1;
+}
+
+.day-cell.no-work {
+  background: rgba(160, 174, 192, 0.15);
+  border-color: #a0aec0;
+}
+
+.day-cell.no-work .day-number {
+  color: #a0aec0;
+}
+
+/* 작업 정보 */
+.work-info {
+  margin-top: 10px;
+  font-size: 12px;
+  text-align: center;
+  opacity: 0.8;
+  transition: opacity 0.3s ease;
+}
+
+.day-cell:hover .work-info {
+  opacity: 1;
+}
+
+.work-hours {
+  color: #667eea;
+  font-weight: 600;
+  margin-bottom: 3px;
+}
+
+.work-salary {
+  color: #48bb78;
+  font-weight: 600;
+}
+
+/* 작업 상태 표시 */
+.work-status {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.8);
+}
+
+.work-completed .work-status {
+  background: #48bb78;
+  box-shadow: 0 0 12px rgba(72, 187, 120, 0.6);
+}
+
+.work-in-progress .work-status {
+  background: #ed8936;
+  box-shadow: 0 0 12px rgba(237, 137, 54, 0.6);
+}
+
+.no-work .work-status {
+  background: #a0aec0;
+}
+
+/* 애니메이션 */
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.7;
+  }
+}
+
+/* 반응형 */
+@media (max-width: 1200px) {
+  .day-cell {
+    min-height: 100px;
+    padding: 12px;
+    border-radius: 16px;
+  }
+  
+  .day-number {
+    font-size: 18px;
+    margin-bottom: 8px;
+  }
+  
+  .work-info {
+    font-size: 11px;
+    margin-top: 8px;
+  }
+  
+  .work-status {
+    width: 12px;
+    height: 12px;
+    top: 8px;
+    right: 8px;
+  }
+}
+
+@media (max-width: 768px) {
+  .day-cell {
+    min-height: 90px;
+    padding: 10px;
+    border-radius: 14px;
+  }
+  
+  .day-number {
+    font-size: 16px;
+    margin-bottom: 6px;
+  }
+  
+  .work-info {
+    font-size: 10px;
+    margin-top: 6px;
+  }
+  
+  .work-status {
+    width: 10px;
+    height: 10px;
+    top: 6px;
+    right: 6px;
+  }
+}
+
+@media (max-width: 480px) {
+  .day-cell {
+    min-height: 80px;
+    padding: 8px;
+    border-radius: 12px;
+  }
+  
+  .day-number {
+    font-size: 14px;
+    margin-bottom: 4px;
+  }
+  
+  .work-info {
+    font-size: 9px;
+    margin-top: 4px;
+  }
+  
+  .work-status {
+    width: 8px;
+    height: 8px;
+    top: 4px;
+    right: 4px;
+  }
+}

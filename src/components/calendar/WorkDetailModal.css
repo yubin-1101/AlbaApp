@@ -1,0 +1,52 @@
+.work-detail-content {
+  min-width: 400px;
+}
+
+.work-detail-section {
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.work-detail-section:last-of-type {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.section-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #666;
+  margin: 0 0 8px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.section-content {
+  font-size: 16px;
+  color: #333;
+  margin: 0;
+  font-weight: 500;
+}
+
+.section-content.salary {
+  font-size: 18px;
+  font-weight: 700;
+  color: #4caf50;
+}
+
+.work-detail-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.edit-button {
+  flex: 1;
+}
+
+.delete-button {
+  flex: 1;
+}

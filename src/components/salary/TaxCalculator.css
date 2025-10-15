@@ -1,0 +1,213 @@
+.tax-calculator {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  padding: 24px;
+}
+
+.calculator-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.calculator-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.reset-button {
+  padding: 8px 16px;
+  background: #f8f9fa;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 14px;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.reset-button:hover {
+  background: #e9ecef;
+  border-color: #007AFF;
+  color: #007AFF;
+}
+
+.calculator-content {
+  display: grid;
+  gap: 24px;
+}
+
+.gross-salary-section {
+  text-align: center;
+  padding: 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  color: white;
+}
+
+.gross-salary-section h4 {
+  margin: 0 0 12px 0;
+  font-size: 18px;
+  opacity: 0.9;
+}
+
+.gross-salary-display {
+  font-size: 32px;
+  font-weight: 700;
+  font-family: 'Courier New', monospace;
+}
+
+.tax-rates-section h4 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 16px 0;
+}
+
+.rates-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.rate-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.rate-item label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.rate-input {
+  padding: 12px 16px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 16px;
+  color: #333;
+  background: #ffffff;
+  transition: border-color 0.2s ease;
+}
+
+.rate-input:focus {
+  outline: none;
+  border-color: #007AFF;
+}
+
+.calculation-results h4 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 16px 0;
+}
+
+.deductions-list {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.deduction-item {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+  padding: 16px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  align-items: center;
+}
+
+.deduction-label {
+  font-weight: 600;
+  color: #333;
+}
+
+.deduction-amount {
+  font-weight: 700;
+  color: #ff5722;
+  text-align: center;
+}
+
+.deduction-rate {
+  font-size: 14px;
+  color: #666;
+  text-align: right;
+}
+
+.total-deductions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  background: #fff3e0;
+  border: 2px solid #ff9800;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.total-label {
+  font-size: 18px;
+  font-weight: 600;
+  color: #e65100;
+}
+
+.total-amount {
+  font-size: 20px;
+  font-weight: 700;
+  color: #e65100;
+}
+
+.net-salary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  background: #e8f5e8;
+  border: 2px solid #4caf50;
+  border-radius: 8px;
+}
+
+.net-label {
+  font-size: 18px;
+  font-weight: 600;
+  color: #2e7d32;
+}
+
+.net-amount {
+  font-size: 24px;
+  font-weight: 700;
+  color: #2e7d32;
+}
+
+.calculator-info h4 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 16px 0;
+}
+
+.info-list {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 20px;
+  margin: 0;
+}
+
+.info-list li {
+  margin-bottom: 8px;
+  color: #666;
+  line-height: 1.5;
+}
+
+.info-list li:last-child {
+  margin-bottom: 0;
+}

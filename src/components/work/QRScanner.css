@@ -1,0 +1,148 @@
+.qr-scanner {
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.scanner-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid #f0f0f0;
+  background: #fafafa;
+}
+
+.scanner-header h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #333;
+}
+
+.close-button {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #666;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.close-button:hover {
+  background: #f0f0f0;
+}
+
+.scanner-content {
+  padding: 20px;
+}
+
+.scanner-start {
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.scanner-icon {
+  font-size: 64px;
+  margin-bottom: 20px;
+}
+
+.scanner-description {
+  font-size: 16px;
+  color: #666;
+  margin-bottom: 32px;
+  line-height: 1.5;
+}
+
+.start-scan-button {
+  margin-bottom: 16px;
+}
+
+.manual-input-button {
+  width: 100%;
+}
+
+.scanner-active {
+  text-align: center;
+}
+
+.video-container {
+  position: relative;
+  margin-bottom: 20px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #000;
+}
+
+.scanner-video {
+  width: 100%;
+  height: 300px;
+  object-fit: cover;
+}
+
+.scanner-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.scanner-frame {
+  width: 200px;
+  height: 200px;
+  border: 3px solid #ffffff;
+  border-radius: 12px;
+  margin-bottom: 20px;
+}
+
+.scanner-instruction {
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 600;
+  text-align: center;
+  margin: 0;
+}
+
+.stop-scan-button {
+  width: 100%;
+}
+
+.scanner-error {
+  background: #ffebee;
+  border: 1px solid #ffcdd2;
+  border-radius: 8px;
+  padding: 16px;
+  margin-top: 16px;
+  text-align: center;
+}
+
+.scanner-error p {
+  color: #c62828;
+  margin: 0 0 12px 0;
+  font-weight: 500;
+}
+
+.scanner-footer {
+  padding: 20px;
+  background: #f8f9fa;
+  border-top: 1px solid #f0f0f0;
+}
+
+.scanner-tip {
+  margin: 0;
+  font-size: 14px;
+  color: #666;
+  text-align: center;
+  line-height: 1.4;
+}

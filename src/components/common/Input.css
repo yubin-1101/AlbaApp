@@ -1,0 +1,209 @@
+/* 입력 필드 컨테이너 */
+.input-container {
+  margin-bottom: 20px;
+  position: relative;
+}
+
+/* 라벨 스타일 */
+.input-label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #2d3748;
+  font-size: 14px;
+  transition: color 0.3s ease;
+}
+
+.input-container:focus-within .input-label {
+  color: #667eea;
+}
+
+/* 입력 필드 스타일 */
+.input-field {
+  width: 100%;
+  padding: 16px 20px;
+  border: 2px solid #e2e8f0;
+  border-radius: 16px;
+  font-size: 14px;
+  font-family: inherit;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.input-field:focus {
+  outline: none;
+  border-color: #667eea;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.15);
+  transform: translateY(-2px);
+}
+
+.input-field:hover:not(:focus) {
+  border-color: #cbd5e0;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+}
+
+/* 플레이스홀더 스타일 */
+.input-field::placeholder {
+  color: #a0aec0;
+  font-style: italic;
+}
+
+/* 입력 필드 타입별 스타일 */
+.input-field[type="number"] {
+  -moz-appearance: textfield;
+}
+
+.input-field[type="number"]::-webkit-outer-spin-button,
+.input-field[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.input-field[type="date"] {
+  position: relative;
+}
+
+.input-field[type="date"]::-webkit-calendar-picker-indicator {
+  background: transparent;
+  color: transparent;
+  cursor: pointer;
+  height: 20px;
+  width: 20px;
+  position: absolute;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* 에러 상태 */
+.input-field.error {
+  border-color: #f56565;
+  background: rgba(254, 215, 215, 0.1);
+  box-shadow: 0 4px 15px rgba(245, 101, 101, 0.15);
+}
+
+.input-field.error:focus {
+  border-color: #f56565;
+  box-shadow: 0 8px 25px rgba(245, 101, 101, 0.2);
+}
+
+.input-error {
+  color: #f56565;
+  font-size: 12px;
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  animation: fadeInUp 0.3s ease-out;
+}
+
+.input-error::before {
+  content: '⚠️';
+  font-size: 10px;
+}
+
+/* 성공 상태 */
+.input-field.success {
+  border-color: #48bb78;
+  background: rgba(198, 246, 213, 0.1);
+  box-shadow: 0 4px 15px rgba(72, 187, 120, 0.15);
+}
+
+.input-field.success:focus {
+  border-color: #48bb78;
+  box-shadow: 0 8px 25px rgba(72, 187, 120, 0.2);
+}
+
+/* 비활성화 상태 */
+.input-field:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: #f7fafc;
+  border-color: #e2e8f0;
+}
+
+.input-field:disabled:hover {
+  transform: none;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+/* 입력 필드 크기 */
+.input-field.input-small {
+  padding: 12px 16px;
+  font-size: 13px;
+  border-radius: 12px;
+}
+
+.input-field.input-medium {
+  padding: 16px 20px;
+  font-size: 14px;
+  border-radius: 16px;
+}
+
+.input-field.input-large {
+  padding: 20px 24px;
+  font-size: 16px;
+  border-radius: 20px;
+}
+
+/* 아이콘이 있는 입력 필드 */
+.input-with-icon {
+  position: relative;
+}
+
+.input-with-icon .input-field {
+  padding-left: 50px;
+}
+
+.input-icon {
+  position: absolute;
+  left: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #a0aec0;
+  font-size: 16px;
+  transition: color 0.3s ease;
+}
+
+.input-container:focus-within .input-icon {
+  color: #667eea;
+}
+
+/* 애니메이션 */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+  .input-field {
+    padding: 14px 18px;
+    font-size: 13px;
+    border-radius: 14px;
+  }
+  
+  .input-field.input-large {
+    padding: 18px 22px;
+    font-size: 15px;
+    border-radius: 18px;
+  }
+}
+
+@media (max-width: 480px) {
+  .input-field {
+    padding: 12px 16px;
+    font-size: 12px;
+    border-radius: 12px;
+  }
+}

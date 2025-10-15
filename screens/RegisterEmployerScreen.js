@@ -16,10 +16,10 @@ const RegisterEmployerScreen = ({ navigation }) => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [branchCode, setBranchCode] = useState(''); //%%수정됨
+  const [branchCode, setBranchCode] = useState('');
 
   const handleRegister = async () => {
-    if (!companyName || !email || !password || !confirmPassword || !phoneNumber || !branchCode) { //%%수정됨
+    if (!companyName || !email || !password || !confirmPassword || !phoneNumber || !branchCode) {
       Alert.alert('입력 오류', '모든 필드를 입력해주세요.');
       return;
     }
@@ -43,7 +43,7 @@ const RegisterEmployerScreen = ({ navigation }) => {
       // Insert into employers table
       const { error: employerInsertError } = await supabase
         .from('employers')
-        .insert([{ user_id: user.id, company_name: companyName, phone_number: phoneNumber, branch_code: branchCode }]); //%%수정됨
+        .insert([{ user_id: user.id, company_name: companyName, phone_number: phoneNumber, branch_code: branchCode }]);
 
       if (employerInsertError) {
         console.log('Supabase employer insert error:', employerInsertError);
@@ -109,7 +109,7 @@ const RegisterEmployerScreen = ({ navigation }) => {
       <TouchableOpacity style={styles.button} onPress={handleRegister}>
         <Text style={styles.buttonText}>회원가입</Text>
       </TouchableOpacity>
-      <TouchableOpacity onPress={() => {navigation.navigate('LoginEmployer'); /*%%수정됨*/}}>
+      <TouchableOpacity onPress={() => {navigation.navigate('LoginEmployer');}}>
         <Text style={styles.linkText}>이미 계정이 있으신가요? 로그인</Text>
       </TouchableOpacity>
     </ScrollView>
