@@ -1,33 +1,67 @@
-
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, StatusBar, Modal, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, StatusBar, Modal, TouchableOpacity, Button } from 'react-native';
 import { Calendar } from 'react-native-calendars';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { supabase } from '../supabase';
 
-const PRIMARY_COLOR = '#D1C4E9'; // Pastel primary color
-const BACKGROUND_COLOR = '#E0F2F7'; // Very light pastel blue background
-const CARD_BACKGROUND_COLOR = '#FFFDE7'; // Very light pastel yellow for cards
-const FONT_COLOR = '#4A4A4A'; // Soft dark grey font color
-
-const DUMMY_WORK_DATA = {
-  '2025-09-25': { hours: '8시간', location: '스타벅스 강남점', pay: '80,000원' },
-  '2025-09-26': { hours: '6시간', location: '투썸플레이스 홍대점', pay: '60,000원' },
-  '2025-09-27': { hours: '4시간', location: '이디야커피 역삼점', pay: '40,000원' },
-};
+const BACKGROUND_COLOR = '#E0F2F7';
+const CARD_BACKGROUND_COLOR = '#FFFDE7';
+const PRIMARY_COLOR = '#6E95FE';
+const FONT_COLOR = '#333333';
 
 const HomeScreen = () => {
+  const navigation = useNavigation();
   const [isModalVisible, setModalVisible] = useState(false);
   const [selectedDayData, setSelectedDayData] = useState(null);
+  const [workRecords, setWorkRecords] = useState({});
+  const [markedDates, setMarkedDates] = useState({});
 
   const onDayPress = (day) => {
-    const data = DUMMY_WORK_DATA[day.dateString];
+    const data = workRecords[day.dateString];
     if (data) {
       setSelectedDayData({ ...data, date: day.dateString });
       setModalVisible(true);
     } else {
-      setSelectedDayData({ date: day.dateString, hours: '휴무', location: '-', pay: '0원' });
+      setSelectedDayData({ date: day.dateString, clock_in_time: '휴무', clock_out_time: null });
       setModalVisible(true);
     }
   };
+
+  useFocusEffect(
+    useCallback(() => {
+      const fetchWorkRecords = async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data, error } = await supabase
+          .from('attendance')
+          .select('clock_in_time, clock_out_time')
+          .eq('employee_id', user.id);
+
+        if (error) {
+          console.error('Error fetching attendance:', error);
+          return;
+        }
+
+        const records = {};
+        const dates = {};
+        data.forEach(item => {
+          if (!item.clock_in_time) return;
+          const date = new Date(item.clock_in_time).toISOString().split('T')[0];
+          records[date] = {
+            clock_in_time: new Date(item.clock_in_time).toLocaleTimeString(),
+            clock_out_time: item.clock_out_time ? new Date(item.clock_out_time).toLocaleTimeString() : '퇴근 전',
+          };
+          dates[date] = { marked: true, selectedColor: PRIMARY_COLOR };
+        });
+
+        setWorkRecords(records);
+        setMarkedDates(dates);
+      };
+
+      fetchWorkRecords();
+    }, [])
+  );
 
   return (
     <View style={styles.container}>
@@ -48,22 +82,27 @@ const HomeScreen = () => {
             },
           },
         }}
-        markedDates={{
-          '2025-09-25': {selected: true, marked: true, selectedColor: PRIMARY_COLOR},
-          '2025-09-26': {marked: true, selectedColor: PRIMARY_COLOR},
-          '2025-09-27': {marked: true, selectedColor: PRIMARY_COLOR},
-        }}
+        markedDates={markedDates}
       />
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>9월 통계</Text>
+        <Text style={styles.cardTitle}>10월 통계</Text>
         <View style={styles.statsRow}>
           <Text style={styles.statsLabel}>총 근무 시간</Text>
-          <Text style={styles.statsValue}>40시간</Text>
+          <Text style={styles.statsValue}>계산 필요</Text>
         </View>
         <View style={styles.statsRow}>
           <Text style={styles.statsLabel}>예상 급여</Text>
-          <Text style={styles.statsValue}>400,000원</Text>
+          <Text style={styles.statsValue}>계산 필요</Text>
         </View>
+      </View>
+
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('QRScanner', { type: 'clock-in' })}>
+          <Text style={styles.buttonText}>출근</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.button, styles.clockOutButton]} onPress={() => navigation.navigate('QRScanner', { type: 'clock-out' })}>
+          <Text style={styles.buttonText}>퇴근</Text>
+        </TouchableOpacity>
       </View>
 
       <Modal
@@ -76,17 +115,15 @@ const HomeScreen = () => {
           <View style={styles.modalContainer}>
             <Text style={styles.modalTitle}>{selectedDayData?.date} 근무 상세</Text>
             <View style={styles.modalDetailRow}>
-              <Text style={styles.modalDetailLabel}>근무 시간:</Text>
-              <Text style={styles.modalDetailValue}>{selectedDayData?.hours}</Text>
+              <Text style={styles.modalDetailLabel}>출근 시간:</Text>
+              <Text style={styles.modalDetailValue}>{selectedDayData?.clock_in_time}</Text>
             </View>
-            <View style={styles.modalDetailRow}>
-              <Text style={styles.modalDetailLabel}>근무 장소:</Text>
-              <Text style={styles.modalDetailValue}>{selectedDayData?.location}</Text>
-            </View>
-            <View style={styles.modalDetailRow}>
-              <Text style={styles.modalDetailLabel}>예상 급여:</Text>
-              <Text style={styles.modalDetailValue}>{selectedDayData?.pay}</Text>
-            </View>
+            {selectedDayData?.clock_out_time &&
+              <View style={styles.modalDetailRow}>
+                <Text style={styles.modalDetailLabel}>퇴근 시간:</Text>
+                <Text style={styles.modalDetailValue}>{selectedDayData?.clock_out_time}</Text>
+              </View>
+            }
             <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.modalCloseButton}>
               <Text style={styles.modalCloseButtonText}>닫기</Text>
             </TouchableOpacity>
@@ -189,6 +226,27 @@ const styles = StyleSheet.create({
   modalCloseButtonText: {
     color: 'white',
     fontSize: 16,
+    fontWeight: 'bold',
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    width: '100%',
+    marginTop: 20,
+  },
+  button: {
+    backgroundColor: '#4CAF50',
+    paddingVertical: 15,
+    paddingHorizontal: 40,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  clockOutButton: {
+    backgroundColor: '#F44336',
+  },
+  buttonText: {
+    color: 'white',
+    fontSize: 18,
     fontWeight: 'bold',
   },
 });

@@ -51,6 +51,18 @@ const RegisterEmployerScreen = ({ navigation }) => {
         return;
       }
 
+      // Also insert into branches table
+      const { error: branchInsertError } = await supabase
+        .from('branches')
+        .insert([{ employer_id: user.id, name: companyName, branch_code: branchCode }]);
+
+      if (branchInsertError) {
+        console.log('Supabase branch insert error:', branchInsertError);
+        Alert.alert('지점 정보 저장 오류', branchInsertError.message);
+        // Optional: Consider deleting the user and employer record here for consistency
+        return;
+      }
+
       Alert.alert('회원가입 성공', '회원가입이 완료되었습니다. 로그인해주세요.');
       navigation.navigate('LoginEmployer');
     }

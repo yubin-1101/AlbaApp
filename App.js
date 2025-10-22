@@ -10,6 +10,7 @@ import RegisterEmployeeScreen from './screens/RegisterEmployeeScreen';
 import RegisterEmployerScreen from './screens/RegisterEmployerScreen';
 import AuthSelectionScreen from './screens/AuthSelectionScreen';
 import EmployerTabNavigator from './navigation/EmployerTabNavigator';
+import QRScannerScreen from './screens/QRScannerScreen';
 
 const Stack = createStackNavigator();
 
@@ -26,6 +27,7 @@ export default function App() {
         <Stack.Screen name="RegisterEmployer" component={RegisterEmployerScreen} options={{ headerShown: false }} />
         <Stack.Screen name="Main" component={TabNavigator} options={{ headerShown: false }} />
         <Stack.Screen name="EmployerMain" component={EmployerTabNavigator} options={{ headerShown: false }} />
+        <Stack.Screen name="QRScanner" component={QRScannerScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
