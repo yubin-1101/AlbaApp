@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Button, Alert, ActivityIndicator } from 'react-native';
-import { CameraView, useCameraPermissions, BarCodeScanner } from 'expo-camera';
+import { CameraView, useCameraPermissions } from 'expo-camera';
 import { supabase } from '../supabase';
 
 const QRScannerScreen = ({ navigation, route }) => {
@@ -10,18 +9,14 @@ const QRScannerScreen = ({ navigation, route }) => {
   const { type: clockType } = route.params; // 'clock-in' or 'clock-out'
 
   useEffect(() => {
-    (async () => {
-      if (!permission?.granted) {
-        await requestPermission();
-      }
-    })();
+    if (!permission) requestPermission();
   }, [permission]);
 
-  const handleBarCodeScanned = async ({ data }) => {
+  const handleBarCodeScanned = async (barcode) => {
     setScanned(true);
-    console.log('Scanned raw data:', data); // Debug log
+    console.log('Scanned raw data:', barcode.data); // Debug log
     try {
-      const qrData = JSON.parse(data);
+      const qrData = JSON.parse(barcode.data);
       console.log('Parsed QR data:', qrData); // Debug log
       const { branchId, token } = qrData;
 
@@ -84,29 +79,28 @@ const QRScannerScreen = ({ navigation, route }) => {
     }
   };
 
-  if (!permission) {
-    return <ActivityIndicator style={styles.center} size="large" />;
-  }
-
-  if (!permission.granted) {
+  if (!permission) return <ActivityIndicator style={styles.center} size="large" />;
+  if (!permission.granted)
     return (
       <View style={styles.container}>
-        <Text style={{ textAlign: 'center' }}>We need your permission to show the camera</Text>
-        <Button onPress={requestPermission} title="grant permission" />
+        <Text style={{ textAlign: 'center' }}>카메라 권한이 필요합니다.</Text>
+        <Button title="권한 허용" onPress={requestPermission} />
       </View>
     );
-  }
 
   return (
     <View style={styles.container}>
       <CameraView
-        onBarCodeScanned={scanned ? undefined : handleBarCodeScanned}
-        barCodeScannerSettings={{
-          barCodeTypes: [BarCodeScanner.Constants.BarCodeType.qr],
-        }}
         style={StyleSheet.absoluteFillObject}
+        facing="back"
+        onBarcodeScanned={
+          scanned ? undefined : (barcode) => handleBarCodeScanned(barcode)
+        }
+        barcodeScannerSettings={{
+          barcodeTypes: ['qr'],
+        }}
       />
-      {scanned && <Button title={'다시 스캔하기'} onPress={() => setScanned(false)} />}
+      {scanned && <Button title="다시 스캔하기" onPress={() => setScanned(false)} />}
     </View>
   );
 };
