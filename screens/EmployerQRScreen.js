@@ -21,9 +21,10 @@ const EmployerQRScreen = () => {
           .from('branches')
           .select('id')
           .eq('employer_id', user.id)
-          .single();
+          .maybeSingle();
 
-        if (branchError || !branch) throw new Error('지점 ID를 branches 테이블에서 찾을 수 없습니다. 로그인한 고용주에게 할당된 지점이 있는지 확인하세요.');
+        if (branchError) throw branchError;
+        if (!branch) throw new Error('지점 ID를 branches 테이블에서 찾을 수 없습니다. 로그인한 고용주에게 할당된 지점이 있는지 확인하세요.');
 
         const branchId = branch.id; // The correct foreign key
 
@@ -34,10 +35,12 @@ const EmployerQRScreen = () => {
           .eq('branch_id', branchId)
           .gte('created_at', `${today}T00:00:00.000Z`)
           .lte('created_at', `${today}T23:59:59.999Z`)
-          .single();
+          .maybeSingle();
+
+        if (selectError) throw selectError;
 
         let token;
-        if (existingQr && !selectError) {
+        if (existingQr) {
           token = existingQr.qr_data;
         } else {
           const newQrToken = Math.random().toString(36).substring(2, 15);

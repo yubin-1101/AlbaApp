@@ -34,7 +34,6 @@ const RegisterEmployeeScreen = ({ navigation }) => {
     });
 
     if (error) {
-      console.log('Supabase signUp error:', error);
       Alert.alert('회원가입 오류', error.message);
       return;
     }
@@ -43,10 +42,9 @@ const RegisterEmployeeScreen = ({ navigation }) => {
       // Insert into employees table with pending status
       const { error: employeeInsertError } = await supabase
         .from('employees')
-        .insert([{ user_id: user.id, name: name, phone_number: phoneNumber, branch_code: branchCode, status: 'pending' }]);
+        .insert([{ user_id: user.id, name: name, phone_number: phoneNumber, branch_code: branchCode.trim().toUpperCase(), status: 'pending' }]);
 
       if (employeeInsertError) {
-        console.log('Supabase employee insert error:', employeeInsertError);
         Alert.alert('알바생 정보 저장 오류', employeeInsertError.message);
         return;
       }

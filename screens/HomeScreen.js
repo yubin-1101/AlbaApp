@@ -47,10 +47,24 @@ const HomeScreen = () => {
         const dates = {};
         data.forEach(item => {
           if (!item.clock_in_time) return;
-          const date = new Date(item.clock_in_time).toISOString().split('T')[0];
+          
+          // Correctly get the local date string to avoid timezone issues
+          const localDate = new Date(item.clock_in_time);
+          const year = localDate.getFullYear();
+          const month = (localDate.getMonth() + 1).toString().padStart(2, '0');
+          const day = localDate.getDate().toString().padStart(2, '0');
+          const date = `${year}-${month}-${day}`;
+
+          // Format time to HH:mm
+          const formatTime = (time) => {
+            if (!time) return null;
+            const d = new Date(time);
+            return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+          }
+
           records[date] = {
-            clock_in_time: new Date(item.clock_in_time).toLocaleTimeString(),
-            clock_out_time: item.clock_out_time ? new Date(item.clock_out_time).toLocaleTimeString() : '퇴근 전',
+            clock_in_time: formatTime(item.clock_in_time),
+            clock_out_time: item.clock_out_time ? formatTime(item.clock_out_time) : '퇴근 전',
           };
           dates[date] = { marked: true, selectedColor: PRIMARY_COLOR };
         });

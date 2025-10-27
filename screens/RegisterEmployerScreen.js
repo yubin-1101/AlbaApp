@@ -16,7 +16,7 @@ const RegisterEmployerScreen = ({ navigation }) => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [branchCode, setBranchCode] = useState('');
+  const [branchCode, setBranchCode] = useState(''); // State for branch code input
 
   const handleRegister = async () => {
     if (!companyName || !email || !password || !confirmPassword || !phoneNumber || !branchCode) {
@@ -28,13 +28,14 @@ const RegisterEmployerScreen = ({ navigation }) => {
       return;
     }
 
+    const finalBranchCode = branchCode.trim().toUpperCase();
+
     const { data: { user }, error } = await supabase.auth.signUp({
       email: email,
       password: password,
     });
 
     if (error) {
-      console.log('Supabase signUp error:', error);
       Alert.alert('회원가입 오류', error.message);
       return;
     }
@@ -43,10 +44,9 @@ const RegisterEmployerScreen = ({ navigation }) => {
       // Insert into employers table
       const { error: employerInsertError } = await supabase
         .from('employers')
-        .insert([{ user_id: user.id, company_name: companyName, phone_number: phoneNumber, branch_code: branchCode }]);
+        .insert([{ user_id: user.id, company_name: companyName, phone_number: phoneNumber, branch_code: finalBranchCode }]);
 
       if (employerInsertError) {
-        console.log('Supabase employer insert error:', employerInsertError);
         Alert.alert('고용주 정보 저장 오류', employerInsertError.message);
         return;
       }
@@ -54,16 +54,14 @@ const RegisterEmployerScreen = ({ navigation }) => {
       // Also insert into branches table
       const { error: branchInsertError } = await supabase
         .from('branches')
-        .insert([{ employer_id: user.id, name: companyName, branch_code: branchCode }]);
+        .insert([{ employer_id: user.id, name: companyName, branch_code: finalBranchCode }]);
 
       if (branchInsertError) {
-        console.log('Supabase branch insert error:', branchInsertError);
         Alert.alert('지점 정보 저장 오류', branchInsertError.message);
-        // Optional: Consider deleting the user and employer record here for consistency
         return;
       }
 
-      Alert.alert('회원가입 성공', '회원가입이 완료되었습니다. 로그인해주세요.');
+      Alert.alert('회원가입 성공', `회원가입이 완료되었습니다. 지점 코드: ${finalBranchCode}`);
       navigation.navigate('LoginEmployer');
     }
   };
@@ -111,12 +109,14 @@ const RegisterEmployerScreen = ({ navigation }) => {
         onChangeText={setPhoneNumber}
         keyboardType="phone-pad"
       />
+      {/* Restored branch code input */}
       <TextInput
         style={styles.input}
-        placeholder="지점 번호"
+        placeholder="지점 번호 (직원과 공유할 코드)"
         placeholderTextColor="#999"
         value={branchCode}
         onChangeText={setBranchCode}
+        autoCapitalize="characters"
       />
       <TouchableOpacity style={styles.button} onPress={handleRegister}>
         <Text style={styles.buttonText}>회원가입</Text>

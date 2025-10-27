@@ -46,6 +46,41 @@ const QRScannerScreen = ({ navigation, route }) => {
         return;
       }
 
+      // 1. Get employee's record from 'employees' table
+      const { data: employee, error: employeeError } = await supabase
+        .from('employees')
+        .select('branch_code, status')
+        .eq('user_id', user.id)
+        .single();
+
+      if (employeeError || !employee) {
+        throw new Error('직원 정보를 찾을 수 없습니다.');
+      }
+
+      // 2. Check if employee is approved
+      if (employee.status !== 'approved') {
+        Alert.alert('오류', '아직 승인되지 않은 직원입니다. 고용주에게 문의하세요.', [{ text: '확인', onPress: () => setScanned(false) }]);
+        return;
+      }
+
+      // 3. Get the branch_code for the branch_id from the QR code
+      const { data: qrBranch, error: qrBranchError } = await supabase
+        .from('branches')
+        .select('branch_code')
+        .eq('id', branchId) // Use branchId from QR data
+        .single();
+
+      if (qrBranchError || !qrBranch) {
+        throw new Error('QR 코드에 해당하는 지점 정보를 찾을 수 없습니다.');
+      }
+
+      // 4. Compare the employee's branch_code with the QR's branch_code
+      if (employee.branch_code !== qrBranch.branch_code) {
+        Alert.alert('오류', '이 지점에 등록된 직원이 아닙니다.', [{ text: '확인', onPress: () => setScanned(false) }]);
+        return;
+      }
+
+      // All checks passed. Proceed with clock-in/out.
       if (clockType === 'clock-in') {
         const { error } = await supabase
           .from('attendance')

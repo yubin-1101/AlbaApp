@@ -13,40 +13,47 @@ const ManagementScreen = () => {
 
   const fetchPendingEmployees = async () => {
     setLoading(true);
-    const { data: employerData, error: employerError } = await supabase.auth.getUser();
-    if (employerError) {
-      Alert.alert('오류', '고용주 정보를 불러오는데 실패했습니다.');
-      console.error(employerError);
+    try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        throw new Error('고용주 정보를 불러올 수 없습니다.');
+      }
+
+      // Use maybeSingle for safety
+      const { data: employer, error: employerError } = await supabase
+        .from('employers')
+        .select('branch_code')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (employerError) {
+        throw employerError;
+      }
+
+      if (!employer || !employer.branch_code) {
+        setPendingEmployees([]);
+        throw new Error('고용주님의 지점 코드를 찾을 수 없습니다. 재로그인 후 다시 시도해주세요.');
+      }
+
+      const employerBranchCode = employer.branch_code;
+
+      const { data: pending, error: employeesError } = await supabase
+        .from('employees')
+        .select('*')
+        .eq('branch_code', employerBranchCode)
+        .eq('status', 'pending');
+
+      if (employeesError) {
+        throw employeesError;
+      }
+      
+      setPendingEmployees(pending || []);
+
+    } catch (error) {
+      Alert.alert('오류', error.message);
+    } finally {
       setLoading(false);
-      return;
     }
-
-    const { data: employerProfile, error: profileError } = await supabase
-      .from('employers')
-      .select('branch_code')
-      .eq('user_id', employerData.user.id)
-      .single();
-
-    if (profileError) {
-      Alert.alert('오류', '고용주 프로필 정보를 불러오는데 실패했습니다.');
-      console.error(profileError);
-      setLoading(false);
-      return;
-    }
-
-    const { data, error } = await supabase
-      .from('employees')
-      .select('*')
-      .eq('branch_code', employerProfile.branch_code)
-      .eq('status', 'pending');
-
-    if (error) {
-      Alert.alert('오류', '승인 대기중인 직원 목록을 불러오는데 실패했습니다.');
-      console.error(error);
-    } else {
-      setPendingEmployees(data);
-    }
-    setLoading(false);
   };
 
   useFocusEffect(
@@ -63,7 +70,6 @@ const ManagementScreen = () => {
 
     if (error) {
       Alert.alert('오류', '직원 승인 중 오류가 발생했습니다.');
-      console.error(error);
     } else {
       Alert.alert('성공', '직원을 승인했습니다.');
       fetchPendingEmployees();
