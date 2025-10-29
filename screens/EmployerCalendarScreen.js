@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { Calendar } from 'react-native-calendars';
@@ -17,6 +16,7 @@ const EmployerCalendarScreen = () => {
   const [currentMonth, setCurrentMonth] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedDayWork, setSelectedDayWork] = useState([]);
+  const [debugInfo, setDebugInfo] = useState(null); // State for debug info
 
   const fetchCalendarData = useCallback(async (month) => {
     setLoading(true);
@@ -26,11 +26,21 @@ const EmployerCalendarScreen = () => {
 
       const { data: branch, error: branchError } = await supabase
         .from('branches')
-        .select('id')
+        .select('id, branch_code')
         .eq('employer_id', user.id)
         .single();
 
       if (branchError || !branch) throw new Error('소속된 지점 정보를 찾을 수 없습니다.');
+
+      // --- DEBUGGING LOGIC ---
+      const { data: lastAttendance } = await supabase.from('attendance').select('*').order('created_at', { ascending: false }).limit(1).single();
+      setDebugInfo({
+        employerId: user.id,
+        employerBranchId: branch.id,
+        employerBranchCode: branch.branch_code,
+        lastAttendance: lastAttendance
+      });
+      // --- END DEBUGGING LOGIC ---
 
       const { data: employeesData, error: employeesError } = await supabase
         .from('employees')
@@ -39,8 +49,7 @@ const EmployerCalendarScreen = () => {
         .eq('status', 'approved');
 
       if (employeesError) throw employeesError;
-      // The FlatList will now use 'name' and 'user_id' from the employees table
-      setEmployees(employeesData);
+      setEmployees(employeesData || []);
 
       const monthDate = new Date(month);
       const startDate = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1).toISOString();
@@ -49,17 +58,15 @@ const EmployerCalendarScreen = () => {
       const { data: attendanceData, error: attendanceError } = await supabase
         .from('attendance')
         .select('employee_id, clock_in_time')
-        .eq('branch_id', branch.id) // Assuming attendance uses the integer branch ID
-        .gte('clock_in_time', startDate)
-        .lte('clock_in_time', endDate);
+        .eq('branch_id', branch.id);
 
       if (attendanceError) throw attendanceError;
 
       const records = {};
       const allDates = {};
-      employeesData.forEach((emp, index) => {
+      (employeesData || []).forEach((emp, index) => {
         records[emp.user_id] = {};
-        const empAttendance = attendanceData.filter(a => a.employee_id === emp.user_id);
+        const empAttendance = (attendanceData || []).filter(a => a.employee_id === emp.user_id);
         empAttendance.forEach(att => {
           const date = format(new Date(att.clock_in_time), 'yyyy-MM-dd');
           records[emp.user_id][date] = { marked: true, dotColor: COLORS[index % COLORS.length] };
@@ -85,35 +92,63 @@ const EmployerCalendarScreen = () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
+
       const { data: branch } = await supabase.from('branches').select('id').eq('employer_id', user.id).single();
       if (!branch) return;
 
       const dayStart = new Date(day.dateString + 'T00:00:00.000Z').toISOString();
       const dayEnd = new Date(day.dateString + 'T23:59:59.999Z').toISOString();
 
-      const { data, error } = await supabase
+      const { data: attendanceData, error: attendanceError } = await supabase
         .from('attendance')
-        .select(`
-          clock_in_time,
-          clock_out_time,
-          employees (name)
-        `)
+        .select('employee_id, clock_in_time, clock_out_time')
         .eq('branch_id', branch.id)
         .gte('clock_in_time', dayStart)
         .lte('clock_in_time', dayEnd);
 
-      if (error) throw error;
+      if (attendanceError) throw attendanceError;
 
-      const formattedData = data.map(item => ({
-        name: item.employees.name,
-        clockIn: item.clock_in_time ? format(parseISO(item.clock_in_time), 'HH:mm') : 'N/A',
-        clockOut: item.clock_out_time ? format(parseISO(item.clock_out_time), 'HH:mm') : '근무 중',
-      }));
+      if (!attendanceData || attendanceData.length === 0) {
+        setSelectedDayWork([]);
+        setIsModalVisible(true);
+        return;
+      }
+
+      const employeeIds = attendanceData.map(att => att.employee_id);
+      const { data: employeesData, error: employeesError } = await supabase
+        .from('employees')
+        .select('user_id, name')
+        .in('user_id', employeeIds);
+
+      if (employeesError) throw employeesError;
+
+      const employeeNameMap = new Map((employeesData || []).map(emp => [emp.user_id, emp.name]));
+
+      const formattedData = attendanceData.map(item => {
+        let duration = 'N/A';
+        if (item.clock_in_time && item.clock_out_time) {
+            const clockInDate = new Date(item.clock_in_time);
+            const clockOutDate = new Date(item.clock_out_time);
+            const diffMs = clockOutDate - clockInDate;
+            const diffHrs = Math.floor(diffMs / 3600000);
+            const diffMins = Math.round((diffMs % 3600000) / 60000);
+            duration = `${diffHrs}시간 ${diffMins}분`;
+        } else if (item.clock_in_time) {
+            duration = '근무 중';
+        }
+
+        return {
+          name: employeeNameMap.get(item.employee_id) || '알 수 없는 직원',
+          clockIn: item.clock_in_time ? format(parseISO(item.clock_in_time), 'HH:mm') : 'N/A',
+          clockOut: item.clock_out_time ? format(parseISO(item.clock_out_time), 'HH:mm') : '퇴근 전',
+          duration: duration,
+        };
+      });
 
       setSelectedDayWork(formattedData);
       setIsModalVisible(true);
     } catch (error) {
-      Alert.alert('오류', '근무 기록을 가져오는 데 실패했습니다.');
+      Alert.alert('오류', '근무 기록을 가져오는 데 실패했습니다: ' + error.message);
     }
   };
 
@@ -147,6 +182,29 @@ const EmployerCalendarScreen = () => {
         firstDay={1}
         enableSwipeMonths={true}
       />
+
+      {/* --- DEBUGGING VIEW --- */}
+      {debugInfo && (
+        <View style={styles.debugBox}>
+          <Text style={styles.debugTitle}>-- 디버깅 정보 --</Text>
+          <Text>고용주 ID: {debugInfo.employerId}</Text>
+          <Text>고용주 지점 ID: {debugInfo.employerBranchId}</Text>
+          <Text>고용주 지점 코드: {debugInfo.employerBranchCode}</Text>
+          <Text>---</Text>
+          <Text style={styles.debugTitle}>최근 출근 기록 (1건):</Text>
+          {debugInfo.lastAttendance ? (
+            <View>
+              <Text>직원 ID: {debugInfo.lastAttendance.employee_id}</Text>
+              <Text>지점 ID: {debugInfo.lastAttendance.branch_id}</Text>
+              <Text>출근 시간: {debugInfo.lastAttendance.clock_in_time}</Text>
+            </View>
+          ) : (
+            <Text>출근 기록 없음</Text>
+          )}
+        </View>
+      )}
+      {/* --- END DEBUGGING VIEW --- */}
+
       <View style={styles.employeeListContainer}>
         <Text style={styles.employeeListTitle}>알바생 선택 (달력 보기)</Text>
         <FlatList
@@ -197,6 +255,18 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginVertical: 20,
     textAlign: 'center',
+  },
+  debugBox: {
+    padding: 10,
+    marginHorizontal: 20,
+    backgroundColor: '#eee',
+    borderColor: '#ccc',
+    borderWidth: 1,
+  },
+  debugTitle: {
+    fontWeight: 'bold',
+    marginBottom: 5,
+    color: '#000',
   },
   employeeListContainer: {
     marginTop: 20,

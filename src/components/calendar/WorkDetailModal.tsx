@@ -6,6 +6,7 @@ interface WorkDetail {
   name: string;
   clockIn: string;
   clockOut: string;
+  duration: string;
 }
 
 interface WorkDetailModalProps {
@@ -24,12 +25,16 @@ const WorkDetailModal: React.FC<WorkDetailModalProps> = ({
     <View style={styles.itemContainer}>
       <Text style={styles.employeeName}>{item.name}</Text>
       <View style={styles.timeContainer}>
-        <Text style={styles.timeLabel}>출근:</Text>
+        <Text style={styles.timeLabel}>출근 시간:</Text>
         <Text style={styles.timeValue}>{item.clockIn}</Text>
       </View>
       <View style={styles.timeContainer}>
-        <Text style={styles.timeLabel}>퇴근:</Text>
+        <Text style={styles.timeLabel}>퇴근 시간:</Text>
         <Text style={styles.timeValue}>{item.clockOut}</Text>
+      </View>
+      <View style={styles.timeContainer}>
+        <Text style={styles.timeLabel}>총 근무시간:</Text>
+        <Text style={styles.timeValue}>{item.duration}</Text>
       </View>
     </View>
   );

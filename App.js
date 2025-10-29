@@ -1,4 +1,5 @@
 import React from 'react';
+import { Provider as PaperProvider } from 'react-native-paper';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import TabNavigator from './navigation/TabNavigator';
@@ -16,19 +17,21 @@ const Stack = createStackNavigator();
 
 export default function App() {
   return (
-    <NavigationContainer>
-      <Stack.Navigator initialRouteName="AuthSelection">
-        <Stack.Screen name="Splash" component={SplashScreen} options={{ headerShown: false }} />
-        <Stack.Screen name="AuthSelection" component={AuthSelectionScreen} options={{ headerShown: false }} />
-        <Stack.Screen name="LoginEmployee" component={LoginEmployeeScreen} options={{ headerShown: false }} />
-        <Stack.Screen name="LoginEmployer" component={LoginEmployerScreen} options={{ headerShown: false }} />
-        <Stack.Screen name="Register" component={RegisterScreen} options={{ headerShown: false }} />
-        <Stack.Screen name="RegisterEmployee" component={RegisterEmployeeScreen} options={{ headerShown: false }} />
-        <Stack.Screen name="RegisterEmployer" component={RegisterEmployerScreen} options={{ headerShown: false }} />
-        <Stack.Screen name="Main" component={TabNavigator} options={{ headerShown: false }} />
-        <Stack.Screen name="EmployerMain" component={EmployerTabNavigator} options={{ headerShown: false }} />
-        <Stack.Screen name="QRScanner" component={QRScannerScreen} />
-      </Stack.Navigator>
-    </NavigationContainer>
+    <PaperProvider>
+      <NavigationContainer>
+        <Stack.Navigator initialRouteName="AuthSelection">
+          <Stack.Screen name="Splash" component={SplashScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="AuthSelection" component={AuthSelectionScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="LoginEmployee" component={LoginEmployeeScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="LoginEmployer" component={LoginEmployerScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="Register" component={RegisterScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="RegisterEmployee" component={RegisterEmployeeScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="RegisterEmployer" component={RegisterEmployerScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="Main" component={TabNavigator} options={{ headerShown: false }} />
+          <Stack.Screen name="EmployerMain" component={EmployerTabNavigator} options={{ headerShown: false }} />
+          <Stack.Screen name="QRScanner" component={QRScannerScreen} />
+        </Stack.Navigator>
+      </NavigationContainer>
+    </PaperProvider>
   );
 }
