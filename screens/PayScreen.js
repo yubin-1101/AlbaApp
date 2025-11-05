@@ -1,26 +1,23 @@
 import React, { useState } from 'react';
-import { StyleSheet, ScrollView, Alert } from 'react-native';
+import { StyleSheet, ScrollView, Alert, View } from 'react-native';
 import { Card, Title, TextInput, Button, DataTable, Caption } from 'react-native-paper';
+import { supabase } from '../supabase';
+import { differenceInMinutes, parseISO, startOfMonth, endOfMonth, format } from 'date-fns';
 
-// 2024년 기준 4대 보험 요율 (근로자 부담분, 단순화된 시뮬레이션)
-const NATIONAL_PENSION_RATE = 0.045; // 국민연금 4.5%
-const HEALTH_INSURANCE_RATE = 0.03545; // 건강보험 3.545%
-const LONG_TERM_CARE_RATE = 0.1295; // 장기요양보험 (건강보험료의 12.95%)
-const EMPLOYMENT_INSURANCE_RATE = 0.009; // 고용보험 0.9%
-
-// 소득세 및 지방소득세 (매우 단순화된 시뮬레이션)
-const INCOME_TAX_SIMPLIFIED_RATE = 0.03; // 예시: 3%
-const LOCAL_INCOME_TAX_RATE = 0.1; // 소득세의 10%
-
-const AVERAGE_WEEKS_IN_MONTH = 4.345; // 월 평균 주 수
+// Constants for calculation
+const NATIONAL_PENSION_RATE = 0.045;
+const HEALTH_INSURANCE_RATE = 0.03545;
+const LONG_TERM_CARE_RATE = 0.1295;
+const EMPLOYMENT_INSURANCE_RATE = 0.009;
+const INCOME_TAX_SIMPLIFIED_RATE = 0.03;
+const LOCAL_INCOME_TAX_RATE = 0.1;
 
 const PayScreen = () => {
   const [hourlyWage, setHourlyWage] = useState('');
-  const [weeklyHours, setWeeklyHours] = useState('');
-  const [monthlyWorkingDays, setMonthlyWorkingDays] = useState('');
+  const [totalHours, setTotalHours] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const [monthlyGrossPay, setMonthlyGrossPay] = useState(0);
-  const [monthlyWeeklyHolidayPay, setMonthlyWeeklyHolidayPay] = useState(0);
   const [nationalPensionDeduction, setNationalPensionDeduction] = useState(0);
   const [healthInsuranceDeduction, setHealthInsuranceDeduction] = useState(0);
   const [employmentInsuranceDeduction, setEmploymentInsuranceDeduction] = useState(0);
@@ -29,24 +26,90 @@ const PayScreen = () => {
   const [totalDeductions, setTotalDeductions] = useState(0);
   const [monthlyNetPay, setMonthlyNetPay] = useState(0);
 
+  const fetchTotalWorkHours = async () => {
+    setIsLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        Alert.alert('오류', '로그인이 필요합니다.');
+        setIsLoading(false);
+        return;
+      }
+
+      const today = new Date();
+      const month_start = startOfMonth(today);
+      const month_end = endOfMonth(today);
+
+      // 1. Fetch attendance records for the current month
+      const { data: attendance, error: attendanceError } = await supabase
+        .from('attendance')
+        .select('clock_in_time, clock_out_time')
+        .eq('employee_id', user.id)
+        .gte('clock_in_time', month_start.toISOString())
+        .lte('clock_in_time', month_end.toISOString());
+
+      if (attendanceError) throw attendanceError;
+
+      // 2. Fetch all schedules for the current month
+      const { data: schedules, error: schedulesError } = await supabase
+        .from('schedules')
+        .select('date, start_time, end_time')
+        .eq('user_id', user.id)
+        .gte('date', format(month_start, 'yyyy-MM-dd'))
+        .lte('date', format(month_end, 'yyyy-MM-dd'));
+
+      if (schedulesError) throw schedulesError;
+
+      // 3. Create a map of schedules for easy lookup
+      const schedulesMap = schedules.reduce((acc, schedule) => {
+        acc[schedule.date] = schedule;
+        return acc;
+      }, {});
+
+      let totalMinutes = 0;
+      // 4. Iterate through attendance and calculate valid work time
+      attendance.forEach(record => {
+        const dateString = format(parseISO(record.clock_in_time), 'yyyy-MM-dd');
+        const schedule = schedulesMap[dateString];
+
+        if (record.clock_in_time && record.clock_out_time && schedule) {
+          const clockIn = parseISO(record.clock_in_time);
+          const clockOut = parseISO(record.clock_out_time);
+
+          const scheduledStart = new Date(`${dateString}T${schedule.start_time}`);
+          const scheduledEnd = new Date(`${dateString}T${schedule.end_time}`);
+
+          const effectiveStart = clockIn > scheduledStart ? clockIn : scheduledStart;
+          const effectiveEnd = clockOut < scheduledEnd ? clockOut : scheduledEnd;
+
+          const minutes = differenceInMinutes(effectiveEnd, effectiveStart);
+          if (minutes > 0) {
+            totalMinutes += minutes;
+          }
+        }
+      });
+
+      const hours = totalMinutes / 60;
+      setTotalHours(hours.toFixed(2)); // 소수점 2자리까지 표시
+      Alert.alert('성공', `이번 달 총 근무 시간을 가져왔습니다: ${hours.toFixed(2)}시간`);
+
+    } catch (error) {
+      Alert.alert('오류', '근무 시간을 가져오는 중 오류가 발생했습니다: ' + error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const calculatePay = () => {
     const wage = parseFloat(hourlyWage);
-    const wHours = parseFloat(weeklyHours);
-    const mDays = parseFloat(monthlyWorkingDays);
+    const tHours = parseFloat(totalHours);
 
-    if (isNaN(wage) || isNaN(wHours) || isNaN(mDays) || wage <= 0 || wHours <= 0 || mDays <= 0) {
-      Alert.alert('입력 오류', '시급, 주간 근무 시간, 월간 근무 일수를 올바르게 입력해주세요.');
+    if (isNaN(wage) || isNaN(tHours) || wage <= 0 || tHours <= 0) {
+      Alert.alert('입력 오류', '시급과 총 근무 시간을 올바르게 입력하거나 불러와 주세요.');
       return;
     }
 
-    const monthlyTotalHours = wHours * AVERAGE_WEEKS_IN_MONTH;
-    let calculatedMonthlyWeeklyHolidayPay = 0;
-    if (wHours >= 15) {
-      calculatedMonthlyWeeklyHolidayPay = Math.floor((wHours / 40) * 8 * wage * AVERAGE_WEEKS_IN_MONTH);
-    }
-    setMonthlyWeeklyHolidayPay(calculatedMonthlyWeeklyHolidayPay);
-
-    const calculatedMonthlyGrossPay = Math.floor((wage * monthlyTotalHours) + calculatedMonthlyWeeklyHolidayPay);
+    const calculatedMonthlyGrossPay = Math.floor(wage * tHours);
     setMonthlyGrossPay(calculatedMonthlyGrossPay);
 
     const np = Math.floor(calculatedMonthlyGrossPay * NATIONAL_PENSION_RATE);
@@ -85,22 +148,25 @@ const PayScreen = () => {
             onChangeText={setHourlyWage}
             mode="outlined"
           />
-          <TextInput
-            label="주간 근무 시간"
-            style={styles.input}
-            keyboardType="numeric"
-            value={weeklyHours}
-            onChangeText={setWeeklyHours}
-            mode="outlined"
-          />
-          <TextInput
-            label="월간 근무 일수"
-            style={styles.input}
-            keyboardType="numeric"
-            value={monthlyWorkingDays}
-            onChangeText={setMonthlyWorkingDays}
-            mode="outlined"
-          />
+          <View style={styles.hoursContainer}>
+            <TextInput
+              label="총 근무 시간"
+              style={styles.hoursInput}
+              keyboardType="numeric"
+              value={totalHours}
+              onChangeText={setTotalHours}
+              mode="outlined"
+            />
+            <Button 
+              mode="outlined" 
+              onPress={fetchTotalWorkHours} 
+              style={styles.fetchButton}
+              loading={isLoading}
+              disabled={isLoading}
+            >
+              내 시간 가져오기
+            </Button>
+          </View>
           <Button mode="contained" onPress={calculatePay} style={styles.button}>
             계산하기
           </Button>
@@ -119,11 +185,6 @@ const PayScreen = () => {
             <DataTable.Row>
               <DataTable.Cell>월간 총 급여 (세전)</DataTable.Cell>
               <DataTable.Cell numeric>{monthlyGrossPay.toLocaleString()}원</DataTable.Cell>
-            </DataTable.Row>
-
-            <DataTable.Row>
-              <DataTable.Cell>  - 월간 주휴수당</DataTable.Cell>
-              <DataTable.Cell numeric>{monthlyWeeklyHolidayPay.toLocaleString()}원</DataTable.Cell>
             </DataTable.Row>
 
             <DataTable.Row>
@@ -161,7 +222,7 @@ const PayScreen = () => {
               <DataTable.Cell numeric><Title>{monthlyNetPay.toLocaleString()}원</Title></DataTable.Cell>
             </DataTable.Row>
           </DataTable>
-          <Caption style={styles.disclaimer}>* 위 계산은 2024년 기준의 단순화된 시뮬레이션이며, 실제 급여 및 공제액과 다를 수 있습니다. 정확한 정보는 관련 기관에 문의하세요.</Caption>
+          <Caption style={styles.disclaimer}>* 주휴수당은 포함되지 않은 예상 금액입니다. 실제 급여 및 공제액과 다를 수 있습니다.</Caption>
         </Card.Content>
       </Card>
     </ScrollView>
@@ -179,6 +240,19 @@ const styles = StyleSheet.create({
   },
   input: {
     marginBottom: 12,
+  },
+  hoursContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  hoursInput: {
+    flex: 1,
+    marginRight: 8,
+  },
+  fetchButton: {
+    height: 55, // Match outlined TextInput height
+    justifyContent: 'center',
   },
   button: {
     marginTop: 8,

@@ -1,137 +1,410 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, StyleSheet, StatusBar } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, Alert, StatusBar, TouchableOpacity } from 'react-native';
 import { Calendar } from 'react-native-calendars';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../supabase';
-import { Appbar, Card, Title, Paragraph, Button, Modal, Portal, Provider, DataTable } from 'react-native-paper';
+import { format, parseISO, differenceInMinutes, getMonth, getYear } from 'date-fns';
+import WorkDetailModal from '../src/components/calendar/WorkDetailModal';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { Button, Card } from 'react-native-paper';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
 const HomeScreen = () => {
   const navigation = useNavigation();
-  const [isModalVisible, setModalVisible] = useState(false);
-  const [selectedDayData, setSelectedDayData] = useState(null);
-  const [workRecords, setWorkRecords] = useState({});
-  const [markedDates, setMarkedDates] = useState({});
+  const [activeTab, setActiveTab] = useState('personal'); // 'personal' or 'shared'
 
-  const onDayPress = (day) => {
-    const data = workRecords[day.dateString];
-    if (data) {
-      setSelectedDayData({ ...data, date: day.dateString });
-      setModalVisible(true);
-    } else {
-      setSelectedDayData({ date: day.dateString, clock_in_time: '휴무', clock_out_time: null });
-      setModalVisible(true);
+  // State for both calendars
+  const [personalWorkRecords, setPersonalWorkRecords] = useState({});
+  const [personalMarkedDates, setPersonalMarkedDates] = useState({});
+  const [sharedWorkRecords, setSharedWorkRecords] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [selectedDayWork, setSelectedDayWork] = useState([]);
+
+  // State for summary
+  const [totalWorkHours, setTotalWorkHours] = useState(0);
+  const [totalWorkDays, setTotalWorkDays] = useState(0);
+  const [estimatedSalary, setEstimatedSalary] = useState(0);
+
+  const fetchPersonalWorkRecords = useCallback(async () => {
+    setLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('로그인이 필요합니다.');
+
+      const month_start = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).toISOString();
+      const month_end = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0, 23, 59, 59).toISOString();
+
+      // 1. Fetch attendance records for the current month
+      const { data: attendance, error: attendanceError } = await supabase
+        .from('attendance')
+        .select('id, clock_in_time, clock_out_time')
+        .eq('employee_id', user.id)
+        .gte('clock_in_time', month_start)
+        .lte('clock_in_time', month_end);
+
+      if (attendanceError) throw attendanceError;
+
+      // 2. Fetch all schedules for the current month
+      const { data: schedules, error: schedulesError } = await supabase
+        .from('schedules')
+        .select('date, start_time, end_time')
+        .eq('user_id', user.id)
+        .gte('date', month_start.split('T')[0])
+        .lte('date', month_end.split('T')[0]);
+
+      if (schedulesError) throw schedulesError;
+
+      // 3. Create a map of schedules for easy lookup
+      const schedulesMap = schedules.reduce((acc, schedule) => {
+        acc[schedule.date] = schedule;
+        return acc;
+      }, {});
+
+      const records = {};
+      const dates = {};
+      const today = format(new Date(), 'yyyy-MM-dd');
+      let monthlyTotalMinutes = 0;
+      let monthlyWorkDays = 0;
+
+      // 4. Iterate through attendance and calculate valid work time
+      attendance.forEach(item => {
+        if (!item.clock_in_time) return;
+        const date = new Date(item.clock_in_time);
+        const dateString = format(date, 'yyyy-MM-dd');
+        
+        records[dateString] = {
+          id: item.id,
+          clock_in_time: item.clock_in_time,
+          clock_out_time: item.clock_out_time,
+        };
+        dates[dateString] = { selected: true, selectedColor: '#4A90E2' };
+
+        const schedule = schedulesMap[dateString];
+        if (item.clock_in_time && item.clock_out_time && schedule) {
+          const clockIn = parseISO(item.clock_in_time);
+          const clockOut = parseISO(item.clock_out_time);
+
+          const scheduledStart = new Date(`${dateString}T${schedule.start_time}`);
+          const scheduledEnd = new Date(`${dateString}T${schedule.end_time}`);
+
+          const effectiveStart = clockIn > scheduledStart ? clockIn : scheduledStart;
+          const effectiveEnd = clockOut < scheduledEnd ? clockOut : scheduledEnd;
+
+          const minutes = differenceInMinutes(effectiveEnd, effectiveStart);
+          if (minutes > 0) {
+            monthlyTotalMinutes += minutes;
+          }
+        }
+        if (item.clock_in_time && item.clock_out_time) {
+            monthlyWorkDays++;
+        }
+      });
+
+      if (!dates[today]) {
+        dates[today] = { marked: true, dotColor: '#F5A623' };
+      }
+
+      const hours = Math.floor(monthlyTotalMinutes / 60);
+      const mins = monthlyTotalMinutes % 60;
+      setTotalWorkHours(`${hours}시간 ${mins}분`);
+      setTotalWorkDays(monthlyWorkDays);
+      setEstimatedSalary(Math.floor((monthlyTotalMinutes / 60) * 11000).toLocaleString());
+
+      setPersonalWorkRecords(records);
+      setPersonalMarkedDates(dates);
+
+    } catch (error) {
+      Alert.alert('오류', error.message);
+    } finally {
+      setLoading(false);
     }
-  };
+  }, [currentMonth]);
+
+  const fetchSharedCalendarData = useCallback(async (month) => {
+    setLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('로그인이 필요합니다.');
+
+      const { data: employee, error: employeeError } = await supabase
+        .from('employees')
+        .select('branch_code')
+        .eq('user_id', user.id)
+        .single();
+
+      if (employeeError || !employee) throw new Error('소속된 지점 정보를 찾을 수 없습니다.');
+
+      const { data: branch, error: branchError } = await supabase
+        .from('branches')
+        .select('id')
+        .eq('branch_code', employee.branch_code)
+        .single();
+
+      if (branchError || !branch) throw new Error('지점 정보를 찾을 수 없습니다.');
+
+      const monthDate = new Date(month);
+      const startDate = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1).toISOString();
+      const endDate = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0, 23, 59, 59).toISOString();
+
+      const { data: attendanceData, error: attendanceError } = await supabase
+        .from('attendance')
+        .select('employee_id, clock_in_time')
+        .eq('branch_id', branch.id)
+        .gte('clock_in_time', startDate)
+        .lte('clock_in_time', endDate);
+
+      if (attendanceError) throw attendanceError;
+
+      const records = {};
+      const today = format(new Date(), 'yyyy-MM-dd');
+
+      (attendanceData || []).forEach(att => {
+        const date = format(new Date(att.clock_in_time), 'yyyy-MM-dd');
+        records[date] = { selected: true, selectedColor: '#50E3C2' };
+      });
+
+      if (!records[today]) {
+        records[today] = { marked: true, dotColor: '#F5A623' };
+      }
+
+      setSharedWorkRecords(records);
+
+    } catch (error) {
+      Alert.alert('오류', error.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
-      const fetchWorkRecords = async () => {
+      if (activeTab === 'personal') {
+        fetchPersonalWorkRecords();
+      } else {
+        fetchSharedCalendarData(currentMonth);
+      }
+    }, [activeTab, currentMonth, fetchPersonalWorkRecords, fetchSharedCalendarData])
+  );
+
+  const handleDayPress = async (day) => {
+    if (activeTab === 'personal') {
+      const data = personalWorkRecords[day.dateString];
+      if (data) {
+        let duration = 'N/A';
+        if (data.clock_in_time && data.clock_out_time) {
+          const minutes = differenceInMinutes(parseISO(data.clock_out_time), parseISO(data.clock_in_time));
+          const hours = Math.floor(minutes / 60);
+          const mins = minutes % 60;
+          duration = `${hours}시간 ${mins}분`;
+        }
+
+        setSelectedDayWork([{
+          name: '나',
+          clockIn: format(parseISO(data.clock_in_time), 'HH:mm'),
+          clockOut: data.clock_out_time ? format(parseISO(data.clock_out_time), 'HH:mm') : '퇴근 전',
+          duration: duration,
+        }]);
+        setIsModalVisible(true);
+      } else {
+        setSelectedDayWork([]);
+        setIsModalVisible(true);
+      }
+    } else {
+      try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
-        const { data, error } = await supabase
-          .from('attendance')
-          .select('clock_in_time, clock_out_time')
-          .eq('employee_id', user.id);
+        const { data: employee, error: employeeError } = await supabase.from('employees').select('branch_code').eq('user_id', user.id).single();
+        if (employeeError || !employee) return;
 
-        if (error) {
-          console.error('Error fetching attendance:', error);
+        const { data: branch } = await supabase.from('branches').select('id').eq('branch_code', employee.branch_code).single();
+        if (!branch) return;
+
+        const dayStart = new Date(day.dateString + 'T00:00:00.000Z').toISOString();
+        const dayEnd = new Date(day.dateString + 'T23:59:59.999Z').toISOString();
+
+        const { data: attendanceData, error: attendanceError } = await supabase
+          .from('attendance')
+          .select('employee_id, clock_in_time, clock_out_time')
+          .eq('branch_id', branch.id)
+          .gte('clock_in_time', dayStart)
+          .lte('clock_in_time', dayEnd);
+
+        if (attendanceError) throw attendanceError;
+
+        if (!attendanceData || attendanceData.length === 0) {
+          setSelectedDayWork([]);
+          setIsModalVisible(true);
           return;
         }
 
-        const records = {};
-        const dates = {};
-        data.forEach(item => {
-          if (!item.clock_in_time) return;
-          
-          const localDate = new Date(item.clock_in_time);
-          const year = localDate.getFullYear();
-          const month = (localDate.getMonth() + 1).toString().padStart(2, '0');
-          const day = localDate.getDate().toString().padStart(2, '0');
-          const date = `${year}-${month}-${day}`;
+        const employeeIds = attendanceData.map(att => att.employee_id);
+        const { data: employeesData, error: employeesError } = await supabase
+          .from('employees')
+          .select('user_id, name')
+          .in('user_id', employeeIds);
 
-          const formatTime = (time) => {
-            if (!time) return null;
-            const d = new Date(time);
-            return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+        if (employeesError) throw employeesError;
+
+        const employeeNameMap = new Map((employeesData || []).map(emp => [emp.user_id, emp.name]));
+
+        const formattedData = attendanceData.map(item => {
+          let duration = 'N/A';
+          if (item.clock_in_time && item.clock_out_time) {
+              const minutes = differenceInMinutes(parseISO(item.clock_out_time), parseISO(item.clock_in_time));
+              const hours = Math.floor(minutes / 60);
+              const mins = minutes % 60;
+              duration = `${hours}시간 ${mins}분`;
+          } else if (item.clock_in_time) {
+              duration = '근무 중';
           }
 
-          records[date] = {
-            clock_in_time: formatTime(item.clock_in_time),
-            clock_out_time: item.clock_out_time ? formatTime(item.clock_out_time) : '퇴근 전',
+          return {
+            name: employeeNameMap.get(item.employee_id) || '알 수 없는 직원',
+            clockIn: item.clock_in_time ? format(parseISO(item.clock_in_time), 'HH:mm') : 'N/A',
+            clockOut: item.clock_out_time ? format(parseISO(item.clock_out_time), 'HH:mm') : '퇴근 전',
+            duration: duration,
           };
-          dates[date] = { marked: true, selectedColor: '#6E95FE' };
         });
 
-        setWorkRecords(records);
-        setMarkedDates(dates);
-      };
+        setSelectedDayWork(formattedData);
+        setIsModalVisible(true);
+      } catch (error) {
+        Alert.alert('오류', '근무 기록을 가져오는 데 실패했습니다: ' + error.message);
+      }
+    }
+  };
 
-      fetchWorkRecords();
-    }, [])
-  );
+  if (loading) {
+    return <ActivityIndicator style={styles.centered} size="large" />;
+  }
 
   return (
-    <Provider>
-      <View style={styles.container}>
-        <StatusBar barStyle="dark-content" />
-        <Calendar
-          onDayPress={onDayPress}
-          theme={{
-            selectedDayBackgroundColor: '#6E95FE',
-            arrowColor: '#6E95FE',
-            dotColor: '#6E95FE',
-            todayTextColor: '#6E95FE',
-          }}
-          markedDates={markedDates}
-        />
-        <Card style={styles.card}>
-          <Card.Content>
-            <Title>10월 통계</Title>
-            <DataTable>
-              <DataTable.Row>
-                <DataTable.Cell>총 근무 시간</DataTable.Cell>
-                <DataTable.Cell numeric>계산 필요</DataTable.Cell>
-              </DataTable.Row>
-              <DataTable.Row>
-                <DataTable.Cell>예상 급여</DataTable.Cell>
-                <DataTable.Cell numeric>계산 필요</DataTable.Cell>
-              </DataTable.Row>
-            </DataTable>
-          </Card.Content>
-        </Card>
-
-        <View style={styles.buttonContainer}>
-          <Button icon="camera" mode="contained" onPress={() => navigation.navigate('QRScanner', { type: 'clock-in' })}>
-            출근
-          </Button>
-          <Button icon="camera" mode="contained" onPress={() => navigation.navigate('QRScanner', { type: 'clock-out' })} style={{backgroundColor: '#F44336'}}>
-            퇴근
-          </Button>
-        </View>
-
-        <Portal>
-          <Modal visible={isModalVisible} onDismiss={() => setModalVisible(false)} contentContainerStyle={styles.modalContainer}>
-            <Title>{selectedDayData?.date} 근무 상세</Title>
-            <Paragraph>출근 시간: {selectedDayData?.clock_in_time}</Paragraph>
-            {selectedDayData?.clock_out_time &&
-              <Paragraph>퇴근 시간: {selectedDayData?.clock_out_time}</Paragraph>
-            }
-            <Button onPress={() => setModalVisible(false)} style={{marginTop: 20}}>닫기</Button>
-          </Modal>
-        </Portal>
+    <View style={styles.container}>
+      <StatusBar barStyle="dark-content" />
+      <View style={styles.tabContainer}>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'personal' && styles.activeTab]}
+          onPress={() => setActiveTab('personal')}
+        >
+          <Text style={[styles.tabText, activeTab === 'personal' && styles.activeTabText]}>내 달력</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'shared' && styles.activeTab]}
+          onPress={() => setActiveTab('shared')}
+        >
+          <Text style={[styles.tabText, activeTab === 'shared' && styles.activeTabText]}>전체 근무</Text>
+        </TouchableOpacity>
       </View>
-    </Provider>
+
+      <Calendar
+        current={format(currentMonth, 'yyyy-MM-dd')}
+        monthFormat={'yyyy년 MM월'}
+        onMonthChange={(month) => setCurrentMonth(new Date(month.dateString))}
+        onDayPress={handleDayPress}
+        markedDates={activeTab === 'personal' ? personalMarkedDates : sharedWorkRecords}
+        hideExtraDays={true}
+        firstDay={1}
+        enableSwipeMonths={true}
+        theme={{
+          todayTextColor: '#F5A623',
+          todayButtonFontWeight: 'bold',
+          stylesheet: {
+            calendar: {
+              main: {
+                height: 380,
+              },
+            },
+            day: {
+              basic: {
+                width: 40,
+                height: 40,
+                alignItems: 'center',
+                justifyContent: 'center',
+              },
+            },
+          },
+          textDayFontSize: 16,
+          textMonthFontSize: 18,
+          textDayHeaderFontSize: 12,
+        }}
+      />
+
+      {activeTab === 'personal' && (
+        <>
+          <View style={styles.summaryContainer}>
+            <Text style={styles.summaryTitle}>{format(currentMonth, 'M월')} 근무 요약</Text>
+            <View style={styles.summaryBoxContainer}>
+              <View style={styles.summaryBox}>
+                <Ionicons name="time-outline" size={24} color="#4A90E2" />
+                <Text style={styles.summaryBoxLabel}>총 근무 시간</Text>
+                <Text style={styles.summaryBoxValue}>{totalWorkHours}</Text>
+              </View>
+              <View style={styles.summaryBox}>
+                <Ionicons name="calendar-outline" size={24} color="#4A90E2" />
+                <Text style={styles.summaryBoxLabel}>총 근무일</Text>
+                <Text style={styles.summaryBoxValue}>{totalWorkDays}일</Text>
+              </View>
+              <View style={styles.summaryBox}>
+                <Ionicons name="wallet-outline" size={24} color="#4A90E2" />
+                <Text style={styles.summaryBoxLabel}>예상 급여</Text>
+                <Text style={styles.summaryBoxValue}>₩{estimatedSalary}</Text>
+              </View>
+            </View>
+          </View>
+        </>
+      )}
+
+      <View style={styles.buttonContainer}>
+        <Button icon="camera" mode="contained" onPress={() => navigation.navigate('QRScanner', { type: 'clock-in' })}>
+          출근
+        </Button>
+        <Button icon="camera" mode="contained" onPress={() => navigation.navigate('QRScanner', { type: 'clock-out' })} style={{backgroundColor: '#F44336'}}>
+          퇴근
+        </Button>
+      </View>
+
+      <WorkDetailModal
+        isVisible={isModalVisible}
+        onClose={() => setIsModalVisible(false)}
+        workDetails={selectedDayWork}
+      />
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#fff',
   },
-  card: {
-    margin: 16,
+  centered: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    backgroundColor: '#f0f0f0',
+    paddingVertical: 10,
+  },
+  tab: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+  },
+  activeTab: {
+    backgroundColor: '#4A90E2',
+  },
+  tabText: {
+    fontSize: 16,
+    color: '#333',
+  },
+  activeTabText: {
+    color: '#fff',
+    fontWeight: 'bold',
   },
   buttonContainer: {
     flexDirection: 'row',
@@ -139,11 +412,35 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     marginTop: 16,
   },
-  modalContainer: {
-    backgroundColor: 'white',
-    padding: 20,
-    margin: 20,
+  summaryContainer: {
+    paddingHorizontal: 16,
+    marginTop: 10,
+  },
+  summaryTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  summaryBoxContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  summaryBox: {
+    backgroundColor: '#f9f9f9',
     borderRadius: 8,
+    padding: 15,
+    alignItems: 'center',
+    width: '32%',
+  },
+  summaryBoxLabel: {
+    marginTop: 5,
+    fontSize: 12,
+    color: 'gray',
+  },
+  summaryBoxValue: {
+    marginTop: 2,
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });
 
