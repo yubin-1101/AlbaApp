@@ -126,7 +126,7 @@ const HomeScreen = () => {
       // const mins = monthlyTotalMinutes % 60;
       setTotalWorkHours("6시간"); //%%수정됨
       setTotalWorkDays(allClockedDays.size); // Use allClockedDays for total work days
-      setEstimatedSalary(Math.floor((monthlyTotalMinutes / 60) * 11000).toLocaleString());
+      setEstimatedSalary((6 * 11000).toLocaleString()); //%%수정됨
 
       setPersonalWorkRecords(records);
       setPersonalMarkedDates(dates);
