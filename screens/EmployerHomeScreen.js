@@ -12,87 +12,91 @@ const EmployerHomeScreen = () => {
   const [shifts, setShifts] = useState([]);
   const [employees, setEmployees] = useState([]);
 
-  const fetchDashboardData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('로그인이 필요합니다.');
+  useFocusEffect(
+    useCallback(() => {
+      const fetchDashboardData = async () => {
+        setLoading(true);
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) throw new Error('로그인이 필요합니다.');
 
-      // 1. Get employer's branch code
-      const { data: branchData, error: branchError } = await supabase
-        .from('branches')
-        .select('id, branch_code')
-        .eq('owner_id', user.id)
-        .single();
+          // 1. Get employer's branch code
+          const { data: branchData, error: branchError } = await supabase
+            .from('branches')
+            .select('id, branch_code')
+            .eq('employer_id', user.id)
+            .single();
 
-      if (branchError || !branchData) throw new Error('지점 정보를 가져올 수 없습니다.');
-      const { id: branchId, branch_code } = branchData;
+          if (branchError || !branchData) throw new Error('지점 정보를 가져올 수 없습니다.');
+          const { id: branchId, branch_code } = branchData;
 
-      // 2. Fetch all employees of the branch
-      const { data: employeesData, error: employeesError } = await supabase
-        .from('employees')
-        .select('user_id, name')
-        .eq('branch_code', branch_code);
+          // 2. Fetch all employees of the branch
+          const { data: employeesData, error: employeesError } = await supabase
+            .from('employees')
+            .select('user_id, name')
+            .eq('branch_code', branch_code);
 
-      if (employeesError) throw employeesError;
+          if (employeesError) throw employeesError;
 
-      const employeeIds = employeesData.map(e => e.user_id);
+          const employeeIds = employeesData.map(e => e.user_id);
 
-      // 3. Fetch today's attendance to check status
-      const today = format(new Date(), 'yyyy-MM-dd');
-      const { data: attendanceData, error: attendanceError } = await supabase
-        .from('attendance')
-        .select('employee_id, clock_in_time, clock_out_time')
-        .in('employee_id', employeeIds)
-        .gte('clock_in_time', `${today}T00:00:00.000Z`)
-        .lte('clock_in_time', `${today}T23:59:59.999Z`);
+          // 3. Fetch today's attendance to check status
+          const today = format(new Date(), 'yyyy-MM-dd');
+          const { data: attendanceData, error: attendanceError } = await supabase
+            .from('attendance')
+            .select('employee_id, clock_in_time, clock_out_time')
+            .in('employee_id', employeeIds)
+            .gte('clock_in_time', `${today}T00:00:00.000Z`)
+            .lte('clock_in_time', `${today}T23:59:59.999Z`);
 
-      if (attendanceError) throw attendanceError;
+          if (attendanceError) throw attendanceError;
 
-      const workingEmployeeIds = new Set(
-        attendanceData
-          .filter(att => att.clock_in_time && !att.clock_out_time)
-          .map(att => att.employee_id)
-      );
+          const workingEmployeeIds = new Set(
+            attendanceData
+              .filter(att => att.clock_in_time && !att.clock_out_time)
+              .map(att => att.employee_id)
+          );
 
-      const processedEmployees = employeesData.map(emp => ({
-        name: emp.name,
-        isWorking: workingEmployeeIds.has(emp.user_id),
-      }));
-      setEmployees(processedEmployees);
+          const processedEmployees = employeesData.map(emp => ({
+            name: emp.name,
+            isWorking: workingEmployeeIds.has(emp.user_id),
+          }));
+          setEmployees(processedEmployees);
 
-      // 4. Fetch today's schedules
-      const { data: schedulesData, error: schedulesError } = await supabase
-        .from('schedules')
-        .select('start_time, end_time, user_id')
-        .in('user_id', employeeIds)
-        .eq('date', today);
+          // 4. Fetch today's schedules
+          const { data: schedulesData, error: schedulesError } = await supabase
+            .from('schedules')
+            .select('start_time, end_time, user_id')
+            .in('user_id', employeeIds)
+            .eq('date', today);
 
-      if (schedulesError) throw schedulesError;
+          if (schedulesError) throw schedulesError;
 
-      const employeeMap = employeesData.reduce((acc, emp) => {
-        acc[emp.user_id] = emp.name;
-        return acc;
-      }, {});
+          const employeeMap = employeesData.reduce((acc, emp) => {
+            acc[emp.user_id] = emp.name;
+            return acc;
+          }, {});
 
-      const processedShifts = schedulesData.map(sch => ({
-        time: `${sch.start_time.substring(0, 5)} - ${sch.end_time.substring(0, 5)}`,
-        name: employeeMap[sch.user_id] || '알 수 없는 직원',
-        employees: employeeMap[sch.user_id] || '',
-      }));
-      setShifts(processedShifts);
+          const processedShifts = schedulesData.map(sch => ({
+            time: `${sch.start_time.substring(0, 5)} - ${sch.end_time.substring(0, 5)}`,
+            name: employeeMap[sch.user_id] || '알 수 없는 직원',
+            employees: employeeMap[sch.user_id] || '',
+          }));
+          setShifts(processedShifts);
 
-      // 5. Set Summary Data
-      setSummaryData({ total: employeesData.length, working: workingEmployeeIds.size });
+          // 5. Set Summary Data
+          setSummaryData({ total: employeesData.length, working: workingEmployeeIds.size });
 
-    } catch (error) {
-      Alert.alert('오류', error.message);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+        } catch (error) {
+          Alert.alert('오류', error.message);
+        } finally {
+          setLoading(false);
+        }
+      };
 
-  useFocusEffect(fetchDashboardData);
+      fetchDashboardData();
+    }, [])
+  );
 
   if (loading) {
     return <ActivityIndicator style={styles.centered} size="large" />;

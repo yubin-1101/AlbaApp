@@ -1,20 +1,24 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, StatusBar, FlatList, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, StatusBar, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { Calendar } from 'react-native-calendars';
 import { supabase } from '../supabase';
 import { format, parseISO } from 'date-fns';
 import WorkDetailModal from '../src/components/calendar/WorkDetailModal';
 
-const COLORS = ['#4A90E2', '#50E3C2', '#F5A623', '#D0021B', '#BD10E0', '#9013FE'];
 const BACKGROUND_COLOR = '#E0F2F7';
-const CARD_BACKGROUND_COLOR = '#FFFDE7';
+const CARD_BACKGROUND_COLOR = '#FFFFFF';
 const PRIMARY_COLOR = '#6E95FE';
 const FONT_COLOR = '#333333';
+const INACTIVE_TAB_COLOR = '#FFFFFF';
+const ACTIVE_TAB_COLOR = '#6E95FE';
+const ACTIVE_TEXT_COLOR = '#FFFFFF';
+const INACTIVE_TEXT_COLOR = '#6E95FE';
+
 
 const SalaryManagementScreen = () => {
-
+  const [employees, setEmployees] = useState([]);
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState(null);
   const [workRecords, setWorkRecords] = useState({});
-  const [allWorkDates, setAllWorkDates] = useState({});
   const [loading, setLoading] = useState(true);
   const [currentMonth, setCurrentMonth] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -41,7 +45,23 @@ const SalaryManagementScreen = () => {
         .eq('status', 'approved');
 
       if (employeesError) throw employeesError;
-      setEmployees(employeesData || []);
+      
+      if (employeesData && employeesData.length > 0) {
+        setEmployees(employeesData);
+        // Set the first employee as selected by default, only if no employee is currently selected
+        if (!selectedEmployeeId) {
+          setSelectedEmployeeId(employeesData[0].user_id);
+        }
+      } else {
+        setEmployees([]);
+        setSelectedEmployeeId(null);
+      }
+
+      if (!employeesData || employeesData.length === 0) {
+        setWorkRecords({});
+        setLoading(false);
+        return;
+      }
 
       const monthDate = new Date(month);
       const startDate = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1).toISOString();
@@ -50,37 +70,37 @@ const SalaryManagementScreen = () => {
       const { data: attendanceData, error: attendanceError } = await supabase
         .from('attendance')
         .select('employee_id, clock_in_time')
-        .eq('branch_id', branch.id);
+        .eq('branch_id', branch.id)
+        .gte('clock_in_time', startDate)
+        .lte('clock_in_time', endDate);
 
       if (attendanceError) throw attendanceError;
 
       const records = {};
-      const allDates = {};
-      (employeesData || []).forEach((emp, index) => {
+      employeesData.forEach((emp) => {
         records[emp.user_id] = {};
         const empAttendance = (attendanceData || []).filter(a => a.employee_id === emp.user_id);
         empAttendance.forEach(att => {
           const date = format(new Date(att.clock_in_time), 'yyyy-MM-dd');
-          records[emp.user_id][date] = { marked: true, dotColor: COLORS[index % COLORS.length] };
-          allDates[date] = { marked: true, dotColor: PRIMARY_COLOR };
+          records[emp.user_id][date] = { marked: true, dotColor: PRIMARY_COLOR };
         });
       });
 
       setWorkRecords(records);
-      setAllWorkDates(allDates);
 
     } catch (error) {
       Alert.alert('오류', error.message);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [selectedEmployeeId]);
 
   useEffect(() => {
     fetchCalendarData(currentMonth);
   }, [fetchCalendarData, currentMonth]);
 
-  const handleDayPress = async (day) => {
+  const handleDayPress = async (day, employeeId) => {
+    if (!employeeId) return;
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
@@ -95,6 +115,7 @@ const SalaryManagementScreen = () => {
         .from('attendance')
         .select('employee_id, clock_in_time, clock_out_time')
         .eq('branch_id', branch.id)
+        .eq('employee_id', employeeId)
         .gte('clock_in_time', dayStart)
         .lte('clock_in_time', dayEnd);
 
@@ -106,15 +127,7 @@ const SalaryManagementScreen = () => {
         return;
       }
 
-      const employeeIds = attendanceData.map(att => att.employee_id);
-      const { data: employeesData, error: employeesError } = await supabase
-        .from('employees')
-        .select('user_id, name')
-        .in('user_id', employeeIds);
-
-      if (employeesError) throw employeesError;
-
-      const employeeNameMap = new Map((employeesData || []).map(emp => [emp.user_id, emp.name]));
+      const employeeNameMap = new Map(employees.map(emp => [emp.user_id, emp.name]));
 
       const formattedData = attendanceData.map(item => {
         let duration = 'N/A';
@@ -144,11 +157,9 @@ const SalaryManagementScreen = () => {
     }
   };
 
+  const selectedEmployee = employees.find(emp => emp.user_id === selectedEmployeeId);
 
-
-
-
-  if (loading) {
+  if (loading && employees.length === 0) {
     return <ActivityIndicator style={styles.centered} size="large" />;
   }
 
@@ -156,16 +167,52 @@ const SalaryManagementScreen = () => {
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" />
       <Text style={styles.title}>월별 근무 기록</Text>
-      <Calendar
-        current={currentMonth}
-        monthFormat={'yyyy년 MM월'}
-        onMonthChange={(month) => setCurrentMonth(month.dateString)}
-        onDayPress={handleDayPress}
-        markedDates={allWorkDates}
-        hideExtraDays={true}
-        firstDay={1}
-        enableSwipeMonths={true}
-      />
+      
+      {employees.length > 0 ? (
+        <>
+          <View style={styles.employeeTabsContainer}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              {employees.map(emp => (
+                <TouchableOpacity
+                  key={emp.user_id}
+                  style={[
+                    styles.employeeTab,
+                    selectedEmployeeId === emp.user_id && styles.activeEmployeeTab,
+                  ]}
+                  onPress={() => setSelectedEmployeeId(emp.user_id)}
+                >
+                  <Text style={[
+                    styles.employeeTabText,
+                    selectedEmployeeId === emp.user_id && styles.activeEmployeeTabText,
+                  ]}>
+                    {emp.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+
+          {loading ? <ActivityIndicator size="large" style={{marginTop: 20}}/> : (
+            selectedEmployee && (
+              <View style={styles.calendarContainer}>
+                <Calendar
+                  key={selectedEmployeeId} // Add key to force re-render on employee change
+                  current={currentMonth}
+                  monthFormat={'yyyy년 MM월'}
+                  onMonthChange={(month) => setCurrentMonth(month.dateString)}
+                  onDayPress={(day) => handleDayPress(day, selectedEmployee.user_id)}
+                  markedDates={workRecords[selectedEmployee.user_id] || {}}
+                  hideExtraDays={true}
+                  firstDay={1}
+                  enableSwipeMonths={true}
+                />
+              </View>
+            )
+          )}
+        </>
+      ) : (
+        <Text style={styles.emptyText}>등록된 직원이 없습니다.</Text>
+      )}
 
       <WorkDetailModal
         isVisible={isModalVisible}
@@ -189,13 +236,47 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: 'bold',
+    color: FONT_COLOR,
     marginVertical: 20,
     textAlign: 'center',
   },
-
+  employeeTabsContainer: {
+    paddingHorizontal: 10,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#DDDDDD',
+  },
+  employeeTab: {
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 20,
+    backgroundColor: INACTIVE_TAB_COLOR,
+    marginHorizontal: 5,
+    borderWidth: 1,
+    borderColor: ACTIVE_TAB_COLOR,
+  },
+  activeEmployeeTab: {
+    backgroundColor: ACTIVE_TAB_COLOR,
+  },
+  employeeTabText: {
+    color: INACTIVE_TEXT_COLOR,
+    fontWeight: 'bold',
+  },
+  activeEmployeeTabText: {
+    color: ACTIVE_TEXT_COLOR,
+  },
+  calendarContainer: {
+    marginHorizontal: 15,
+    marginTop: 20,
+    backgroundColor: CARD_BACKGROUND_COLOR,
+    borderRadius: 10,
+    padding: 10,
+    elevation: 3,
+  },
   emptyText: {
     textAlign: 'center',
-    marginTop: 10,
+    marginTop: 50,
+    fontSize: 16,
     color: 'gray',
   },
 });

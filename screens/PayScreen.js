@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { StyleSheet, ScrollView, Alert, View } from 'react-native';
-import { Card, Title, TextInput, Button, DataTable, Caption } from 'react-native-paper';
+import React, { useState, useEffect, useCallback } from 'react';
+import { StyleSheet, ScrollView, Alert, View, TouchableOpacity } from 'react-native';
+import { Card, Title, TextInput, Button, DataTable, Caption, Text } from 'react-native-paper';
 import { supabase } from '../supabase';
-import { differenceInMinutes, parseISO, startOfMonth, endOfMonth, format } from 'date-fns';
+import { differenceInMinutes, parseISO, startOfMonth, endOfMonth, format, addMinutes, subMinutes, addDays } from 'date-fns';
 
 // Constants for calculation
 const NATIONAL_PENSION_RATE = 0.045;
@@ -15,7 +15,9 @@ const LOCAL_INCOME_TAX_RATE = 0.1;
 const PayScreen = () => {
   const [hourlyWage, setHourlyWage] = useState('');
   const [totalHours, setTotalHours] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [workDays, setWorkDays] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [showWorkDaysDetail, setShowWorkDaysDetail] = useState(false);
 
   const [monthlyGrossPay, setMonthlyGrossPay] = useState(0);
   const [nationalPensionDeduction, setNationalPensionDeduction] = useState(0);
@@ -26,7 +28,7 @@ const PayScreen = () => {
   const [totalDeductions, setTotalDeductions] = useState(0);
   const [monthlyNetPay, setMonthlyNetPay] = useState(0);
 
-  const fetchTotalWorkHours = async () => {
+  const fetchPayData = useCallback(async () => {
     setIsLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -36,11 +38,28 @@ const PayScreen = () => {
         return;
       }
 
+      // Fetch the most recent hourly wage
+      const { data: wageData, error: wageError } = await supabase
+        .from('work_records')
+        .select('hourly_wage')
+        .eq('employee_id', user.id)
+        .order('date', { ascending: false })
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (wageError && wageError.code !== 'PGRST116') { // PGRST116: "exact one row not found"
+        throw wageError;
+      }
+      if (wageData) {
+        setHourlyWage(wageData.hourly_wage.toString());
+      }
+
+      // Fetch total work hours for the current month
       const today = new Date();
       const month_start = startOfMonth(today);
       const month_end = endOfMonth(today);
 
-      // 1. Fetch attendance records for the current month
       const { data: attendance, error: attendanceError } = await supabase
         .from('attendance')
         .select('clock_in_time, clock_out_time')
@@ -50,7 +69,6 @@ const PayScreen = () => {
 
       if (attendanceError) throw attendanceError;
 
-      // 2. Fetch all schedules for the current month
       const { data: schedules, error: schedulesError } = await supabase
         .from('schedules')
         .select('date, start_time, end_time')
@@ -60,45 +78,70 @@ const PayScreen = () => {
 
       if (schedulesError) throw schedulesError;
 
-      // 3. Create a map of schedules for easy lookup
       const schedulesMap = schedules.reduce((acc, schedule) => {
         acc[schedule.date] = schedule;
         return acc;
       }, {});
 
       let totalMinutes = 0;
-      // 4. Iterate through attendance and calculate valid work time
+      const workDates = new Set(); // For grace-period-valid work hours
+      const allClockedDays = new Set(); // For any clocked days
+      const gracePeriod = 15; // 15 minute grace period
+
       attendance.forEach(record => {
         const dateString = format(parseISO(record.clock_in_time), 'yyyy-MM-dd');
         const schedule = schedulesMap[dateString];
+
+        // Add to allClockedDays if clock-in and clock-out exist
+        if (record.clock_in_time && record.clock_out_time) {
+          allClockedDays.add(dateString);
+        }
 
         if (record.clock_in_time && record.clock_out_time && schedule) {
           const clockIn = parseISO(record.clock_in_time);
           const clockOut = parseISO(record.clock_out_time);
 
-          const scheduledStart = new Date(`${dateString}T${schedule.start_time}`);
-          const scheduledEnd = new Date(`${dateString}T${schedule.end_time}`);
+          let scheduledStart = new Date(`${dateString}T${schedule.start_time}`);
+          let scheduledEnd = new Date(`${dateString}T${schedule.end_time}`);
 
-          const effectiveStart = clockIn > scheduledStart ? clockIn : scheduledStart;
-          const effectiveEnd = clockOut < scheduledEnd ? clockOut : scheduledEnd;
+          // Handle overnight shifts
+          if (scheduledEnd <= scheduledStart) {
+            scheduledEnd = addDays(scheduledEnd, 1);
+          }
 
-          const minutes = differenceInMinutes(effectiveEnd, effectiveStart);
-          if (minutes > 0) {
-            totalMinutes += minutes;
+          const validClockInStart = subMinutes(scheduledStart, gracePeriod);
+          const validClockInEnd = addMinutes(scheduledStart, gracePeriod);
+          const validClockOutStart = subMinutes(scheduledEnd, gracePeriod);
+          const validClockOutEnd = addMinutes(scheduledEnd, gracePeriod);
+
+          const isClockInValid = clockIn >= validClockInStart && clockIn <= validClockInEnd;
+          const isClockOutValid = clockOut >= validClockOutStart && clockOut <= validClockOutEnd;
+
+          if (isClockInValid && isClockOutValid) {
+            const scheduledMinutes = differenceInMinutes(scheduledEnd, scheduledStart);
+            if (scheduledMinutes > 0) {
+              totalMinutes += scheduledMinutes;
+              workDates.add(dateString); // Count unique work days based on grace period
+            }
           }
         }
       });
 
       const hours = totalMinutes / 60;
-      setTotalHours(hours.toFixed(2)); // 소수점 2자리까지 표시
-      Alert.alert('성공', `이번 달 총 근무 시간을 가져왔습니다: ${hours.toFixed(2)}시간`);
+      setTotalHours(hours.toFixed(2));
+      setWorkDays(Array.from(allClockedDays).sort()); // Use allClockedDays for total work days
+
 
     } catch (error) {
-      Alert.alert('오류', '근무 시간을 가져오는 중 오류가 발생했습니다: ' + error.message);
+      Alert.alert('오류', '데이터를 가져오는 중 오류가 발생했습니다: ' + error.message);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchPayData();
+  }, [fetchPayData]);
 
   const calculatePay = () => {
     const wage = parseFloat(hourlyWage);
@@ -147,6 +190,7 @@ const PayScreen = () => {
             value={hourlyWage}
             onChangeText={setHourlyWage}
             mode="outlined"
+            disabled={isLoading}
           />
           <View style={styles.hoursContainer}>
             <TextInput
@@ -156,18 +200,28 @@ const PayScreen = () => {
               value={totalHours}
               onChangeText={setTotalHours}
               mode="outlined"
-            />
-            <Button 
-              mode="outlined" 
-              onPress={fetchTotalWorkHours} 
-              style={styles.fetchButton}
-              loading={isLoading}
               disabled={isLoading}
-            >
-              내 시간 가져오기
-            </Button>
+              editable={false} // Fetched from DB, so not editable
+            />
           </View>
-          <Button mode="contained" onPress={calculatePay} style={styles.button}>
+          {workDays.length > 0 && (
+            <TouchableOpacity onPress={() => setShowWorkDaysDetail(!showWorkDaysDetail)} style={styles.workDaysSummaryContainer}>
+              <Caption style={styles.workDaysTitle}>근무일:</Caption>
+              <Text style={styles.workDaysCount}>{workDays.length}일</Text>
+            </TouchableOpacity>
+          )}
+          {showWorkDaysDetail && workDays.length > 0 && (
+            <View style={styles.workDaysDetailContainer}>
+              <Text style={styles.workDaysContent}>{workDays.join(', ')}</Text>
+            </View>
+          )}
+          <Button 
+            mode="contained" 
+            onPress={calculatePay} 
+            style={styles.button}
+            loading={isLoading}
+            disabled={isLoading}
+          >
             계산하기
           </Button>
         </Card.Content>
@@ -244,15 +298,36 @@ const styles = StyleSheet.create({
   hoursContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 8, // Adjusted margin
   },
   hoursInput: {
     flex: 1,
+  },
+  workDaysSummaryContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#EFEFEF',
+    padding: 8,
+    borderRadius: 4,
+    marginBottom: 4, // Reduced margin
+  },
+  workDaysDetailContainer: {
+    backgroundColor: '#EFEFEF',
+    padding: 8,
+    borderRadius: 4,
+    marginBottom: 12,
+  },
+  workDaysTitle: {
+    fontWeight: 'bold',
     marginRight: 8,
   },
-  fetchButton: {
-    height: 55, // Match outlined TextInput height
-    justifyContent: 'center',
+  workDaysCount: {
+    flex: 1,
+    lineHeight: 20,
+    color: '#007AFF', // Make it look clickable
+  },
+  workDaysContent: {
+    lineHeight: 20,
   },
   button: {
     marginTop: 8,

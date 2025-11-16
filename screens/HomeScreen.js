@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, Alert, StatusBar, TouchableOpacity } from 'react-native';
 import { Calendar } from 'react-native-calendars';
 import { supabase } from '../supabase';
-import { format, parseISO, differenceInMinutes, getMonth, getYear } from 'date-fns';
+import { format, parseISO, differenceInMinutes, getMonth, getYear, addMinutes, subMinutes, addDays } from 'date-fns';
 import WorkDetailModal from '../src/components/calendar/WorkDetailModal';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Button, Card } from 'react-native-paper';
@@ -65,7 +65,9 @@ const HomeScreen = () => {
       const dates = {};
       const today = format(new Date(), 'yyyy-MM-dd');
       let monthlyTotalMinutes = 0;
-      let monthlyWorkDays = 0;
+      const workDates = new Set(); // For grace-period-valid work hours
+      const allClockedDays = new Set(); // For any clocked days
+      const gracePeriod = 15; // 15 minute grace period
 
       // 4. Iterate through attendance and calculate valid work time
       attendance.forEach(item => {
@@ -80,24 +82,39 @@ const HomeScreen = () => {
         };
         dates[dateString] = { selected: true, selectedColor: '#4A90E2' };
 
+        // Add to allClockedDays if clock-in and clock-out exist
+        if (item.clock_in_time && item.clock_out_time) {
+          allClockedDays.add(dateString);
+        }
+
         const schedule = schedulesMap[dateString];
         if (item.clock_in_time && item.clock_out_time && schedule) {
           const clockIn = parseISO(item.clock_in_time);
           const clockOut = parseISO(item.clock_out_time);
 
-          const scheduledStart = new Date(`${dateString}T${schedule.start_time}`);
-          const scheduledEnd = new Date(`${dateString}T${schedule.end_time}`);
+          let scheduledStart = new Date(`${dateString}T${schedule.start_time}`);
+          let scheduledEnd = new Date(`${dateString}T${schedule.end_time}`);
 
-          const effectiveStart = clockIn > scheduledStart ? clockIn : scheduledStart;
-          const effectiveEnd = clockOut < scheduledEnd ? clockOut : scheduledEnd;
-
-          const minutes = differenceInMinutes(effectiveEnd, effectiveStart);
-          if (minutes > 0) {
-            monthlyTotalMinutes += minutes;
+          // Handle overnight shifts
+          if (scheduledEnd <= scheduledStart) {
+            scheduledEnd = addDays(scheduledEnd, 1);
           }
-        }
-        if (item.clock_in_time && item.clock_out_time) {
-            monthlyWorkDays++;
+
+          const validClockInStart = subMinutes(scheduledStart, gracePeriod);
+          const validClockInEnd = addMinutes(scheduledStart, gracePeriod);
+          const validClockOutStart = subMinutes(scheduledEnd, gracePeriod);
+          const validClockOutEnd = addMinutes(scheduledEnd, gracePeriod);
+
+          const isClockInValid = clockIn >= validClockInStart && clockIn <= validClockInEnd;
+          const isClockOutValid = clockOut >= validClockOutStart && clockOut <= validClockOutEnd;
+
+          if (isClockInValid && isClockOutValid) {
+            const scheduledMinutes = differenceInMinutes(scheduledEnd, scheduledStart);
+            if (scheduledMinutes > 0) {
+              monthlyTotalMinutes += scheduledMinutes;
+              workDates.add(dateString); // Count unique work days based on grace period
+            }
+          }
         }
       });
 
@@ -108,7 +125,7 @@ const HomeScreen = () => {
       const hours = Math.floor(monthlyTotalMinutes / 60);
       const mins = monthlyTotalMinutes % 60;
       setTotalWorkHours(`${hours}시간 ${mins}분`);
-      setTotalWorkDays(monthlyWorkDays);
+      setTotalWorkDays(allClockedDays.size); // Use allClockedDays for total work days
       setEstimatedSalary(Math.floor((monthlyTotalMinutes / 60) * 11000).toLocaleString());
 
       setPersonalWorkRecords(records);

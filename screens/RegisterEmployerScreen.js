@@ -41,23 +41,19 @@ const RegisterEmployerScreen = ({ navigation }) => {
     }
 
     if (user) {
-      // Insert into employers table
-      const { error: employerInsertError } = await supabase
-        .from('employers')
-        .insert([{ user_id: user.id, company_name: companyName, phone_number: phoneNumber, branch_code: finalBranchCode }]);
+      const { error: rpcError } = await supabase.rpc('create_employer_with_branch', {
+        p_user_id: user.id,
+        p_company_name: companyName,
+        p_phone_number: phoneNumber,
+        p_branch_code: finalBranchCode,
+      });
 
-      if (employerInsertError) {
-        Alert.alert('고용주 정보 저장 오류', employerInsertError.message);
-        return;
-      }
-
-      // Also insert into branches table
-      const { error: branchInsertError } = await supabase
-        .from('branches')
-        .insert([{ employer_id: user.id, name: companyName, branch_code: finalBranchCode }]);
-
-      if (branchInsertError) {
-        Alert.alert('지점 정보 저장 오류', branchInsertError.message);
+      if (rpcError) {
+        console.error('RPC Error:', rpcError);
+        Alert.alert(
+          '등록 오류',
+          '지점 정보를 등록하는 데 실패했습니다. 지점 코드가 이미 사용 중일 수 있습니다. 다른 코드를 시도해주세요.'
+        );
         return;
       }
 
