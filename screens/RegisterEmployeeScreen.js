@@ -19,7 +19,8 @@ const RegisterEmployeeScreen = ({ navigation }) => {
   const [branchCode, setBranchCode] = useState('');
 
   const handleRegister = async () => {
-    if (!name || !email || !password || !confirmPassword || !phoneNumber || !branchCode) {
+    const trimmedBranchCode = branchCode.trim().toUpperCase();
+    if (!name || !email || !password || !confirmPassword || !phoneNumber || !trimmedBranchCode) {
       Alert.alert('입력 오류', '모든 필드를 입력해주세요.');
       return;
     }
@@ -28,29 +29,48 @@ const RegisterEmployeeScreen = ({ navigation }) => {
       return;
     }
 
-    const { data: { user }, error } = await supabase.auth.signUp({
-      email: email,
-      password: password,
-    });
+    try {
+      // 1. Validate branch code
+      const { data: branchData, error: branchError } = await supabase
+        .from('branches')
+        .select('id')
+        .eq('branch_code', trimmedBranchCode)
+        .maybeSingle();
 
-    if (error) {
-      Alert.alert('회원가입 오류', error.message);
-      return;
-    }
+      if (branchError) {
+        throw new Error(`지점 코드 확인 중 오류가 발생했습니다: ${branchError.message}`);
+      }
 
-    if (user) {
-      // Insert into employees table with pending status
-      const { error: employeeInsertError } = await supabase
-        .from('employees')
-        .insert([{ user_id: user.id, name: name, phone_number: phoneNumber, branch_code: branchCode.trim().toUpperCase(), status: 'pending' }]);
-
-      if (employeeInsertError) {
-        Alert.alert('알바생 정보 저장 오류', employeeInsertError.message);
+      if (!branchData) {
+        Alert.alert('입력 오류', '존재하지 않는 지점 번호입니다. 다시 확인해주세요.');
         return;
       }
 
-      Alert.alert('회원가입 요청 완료', '고용주의 승인을 기다려주세요.');
-      navigation.navigate('LoginEmployee');
+      // 2. Sign up the user
+      const { data: { user }, error: signUpError } = await supabase.auth.signUp({
+        email: email,
+        password: password,
+      });
+
+      if (signUpError) {
+        throw signUpError;
+      }
+
+      if (user) {
+        // 3. Insert into employees table with pending status
+        const { error: employeeInsertError } = await supabase
+          .from('employees')
+          .insert([{ user_id: user.id, name: name, phone_number: phoneNumber, branch_code: trimmedBranchCode, status: 'pending' }]);
+
+        if (employeeInsertError) {
+          throw employeeInsertError;
+        }
+
+        Alert.alert('회원가입 요청 완료', '고용주의 승인을 기다려주세요.');
+        navigation.navigate('LoginEmployee');
+      }
+    } catch (error) {
+      Alert.alert('오류', error.message);
     }
   };
 
