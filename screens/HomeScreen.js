@@ -148,17 +148,19 @@ const HomeScreen = () => {
         .from('employees')
         .select('branch_code')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
-      if (employeeError || !employee) throw new Error('소속된 지점 정보를 찾을 수 없습니다.');
+      if (employeeError) throw employeeError;
+      if (!employee) throw new Error('소속된 지점 정보를 찾을 수 없습니다. 고용주에게 승인되었는지 확인하세요.');
 
       const { data: branch, error: branchError } = await supabase
         .from('branches')
         .select('id')
         .eq('branch_code', employee.branch_code)
-        .single();
+        .maybeSingle();
 
-      if (branchError || !branch) throw new Error('지점 정보를 찾을 수 없습니다.');
+      if (branchError) throw branchError;
+      if (!branch) throw new Error(`지점 코드(${employee.branch_code})에 해당하는 지점을 찾을 수 없습니다.`);
 
       const monthDate = new Date(month);
       const startDate = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1).toISOString();
