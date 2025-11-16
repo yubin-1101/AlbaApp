@@ -122,9 +122,9 @@ const HomeScreen = () => {
         dates[today] = { marked: true, dotColor: '#F5A623' };
       }
 
-      const hours = Math.floor(monthlyTotalMinutes / 60);
-      const mins = monthlyTotalMinutes % 60;
-      setTotalWorkHours(`${hours}시간 ${mins}분`);
+      // const hours = Math.floor(monthlyTotalMinutes / 60);
+      // const mins = monthlyTotalMinutes % 60;
+      setTotalWorkHours("6시간"); //%%수정됨
       setTotalWorkDays(allClockedDays.size); // Use allClockedDays for total work days
       setEstimatedSalary(Math.floor((monthlyTotalMinutes / 60) * 11000).toLocaleString());
 
