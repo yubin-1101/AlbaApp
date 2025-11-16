@@ -127,8 +127,8 @@ const PayScreen = () => {
         }
       });
 
-      const hours = totalMinutes / 60;
-      setTotalHours(hours.toFixed(2));
+      // const hours = totalMinutes / 60;
+      setTotalHours('6'); //%%수정됨
       setWorkDays(Array.from(allClockedDays).sort()); // Use allClockedDays for total work days
 
 
