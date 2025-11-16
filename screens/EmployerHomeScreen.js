@@ -25,9 +25,10 @@ const EmployerHomeScreen = () => {
             .from('branches')
             .select('id, branch_code')
             .eq('employer_id', user.id)
-            .single();
+            .maybeSingle();
 
-          if (branchError || !branchData) throw new Error('지점 정보를 가져올 수 없습니다.');
+          if (branchError) throw branchError;
+          if (!branchData) throw new Error('사장님에게 할당된 지점 정보가 없습니다. 관리자에게 문의하세요.');
           const { id: branchId, branch_code } = branchData;
 
           // 2. Fetch all employees of the branch
