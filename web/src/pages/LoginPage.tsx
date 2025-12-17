@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { Users, Building2, ArrowLeft, UserPlus, Store, Sparkles } from 'lucide-react'
 
 type UserRole = 'employee' | 'employer' | null
 
@@ -233,26 +234,41 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
   // 선택 화면
   if (view === 'selection') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-500 to-blue-600">
-        <div className="bg-white rounded-lg shadow-xl p-8 w-96">
-          <h1 className="text-3xl font-bold text-center mb-2 text-gray-800">알바체크</h1>
-          <p className="text-center text-gray-600 mb-8">근태 및 급여 관리 플랫폼</p>
-          
-          <p className="text-center text-gray-700 mb-6">어떤 유형으로 로그인/회원가입 하시겠어요?</p>
-          
-          <div className="space-y-3">
-            <button
-              onClick={() => setView('employee-login')}
-              className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition"
-            >
-              👷 알바생
-            </button>
-            <button
-              onClick={() => setView('employer-login')}
-              className="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 transition"
-            >
-              🏪 고용주
-            </button>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 relative overflow-hidden p-4">
+        {/* Background decoration */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-400 rounded-full filter blur-3xl opacity-30 animate-pulse-slow"></div>
+          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-indigo-400 rounded-full filter blur-3xl opacity-30 animate-pulse-slow" style={{animationDelay: '1s'}}></div>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-purple-300 rounded-full filter blur-3xl opacity-20 animate-pulse-slow" style={{animationDelay: '2s'}}></div>
+        </div>
+        
+        <div className="relative z-10 animate-fade-in w-full max-w-md">
+          <div className="bg-white rounded-3xl shadow-2xl p-12 border border-gray-100">
+            {/* Logo */}
+            <div className="text-center mb-12">
+              <div className="inline-flex items-center justify-center w-28 h-28 rounded-3xl bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg shadow-blue-500/40 mb-8">
+                <span className="text-6xl">⏰</span>
+              </div>
+              <h1 className="text-5xl font-bold text-gray-800 mb-3 tracking-tight">알바체크</h1>
+              <p className="text-gray-500 text-base">근태 및 급여 관리 플랫폼</p>
+            </div>
+            
+            <p className="text-center text-gray-600 mb-10 text-base font-medium">어떤 유형으로 시작하시겠어요?</p>
+            
+            <div className="space-y-5">
+              <button
+                onClick={() => setView('employee-login')}
+                className="w-full bg-gradient-to-r from-blue-500 to-indigo-500 text-white py-5 rounded-2xl font-bold hover:from-blue-600 hover:to-indigo-600 transition-all duration-300 shadow-lg shadow-blue-500/40 hover:shadow-xl hover:shadow-blue-500/50 btn-press flex items-center justify-center gap-4 text-xl"
+              >
+                <span className="text-4xl">👷</span> 알바생
+              </button>
+              <button
+                onClick={() => setView('employer-login')}
+                className="w-full bg-gradient-to-r from-emerald-500 to-green-500 text-white py-5 rounded-2xl font-bold hover:from-emerald-600 hover:to-green-600 transition-all duration-300 shadow-lg shadow-green-500/40 hover:shadow-xl hover:shadow-green-500/50 btn-press flex items-center justify-center gap-4 text-xl"
+              >
+                <span className="text-4xl">🏪</span> 고용주
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -262,59 +278,73 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
   // 알바생 로그인
   if (view === 'employee-login') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-500 to-blue-600">
-        <div className="bg-white rounded-lg shadow-xl p-8 w-96">
-          <button onClick={() => setView('selection')} className="text-gray-500 hover:text-gray-700 mb-4">
-            ← 뒤로
-          </button>
-          <h1 className="text-2xl font-bold text-center mb-6 text-gray-800">알바생 로그인</h1>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 relative overflow-hidden p-4">
+        {/* Background decoration */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-400 rounded-full filter blur-3xl opacity-30 animate-pulse-slow"></div>
+          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-indigo-400 rounded-full filter blur-3xl opacity-30 animate-pulse-slow"></div>
+        </div>
+        
+        <div className="relative z-10 animate-fade-in w-full max-w-[420px]">
+          <div className="bg-white rounded-3xl shadow-2xl p-10 border border-gray-100">
+            <button onClick={() => setView('selection')} className="text-gray-500 hover:text-gray-800 mb-6 flex items-center gap-2 transition-colors">
+              <ArrowLeft size={20} />
+              <span>뒤로가기</span>
+            </button>
+            <div className="text-center mb-8">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 mb-4 shadow-lg shadow-blue-500/30">
+                <Users size={32} className="text-white" />
+              </div>
+              <h1 className="text-2xl font-bold text-gray-800">알바생 로그인</h1>
+              <p className="text-gray-500 mt-2">출퇴근 및 급여를 관리하세요</p>
+            </div>
 
-          <form onSubmit={handleEmployeeLogin} className="space-y-4">
+          <form onSubmit={handleEmployeeLogin} className="space-y-5">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">이메일</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">이메일</label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-800 placeholder-gray-400 transition-all"
                 placeholder="이메일을 입력하세요"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">비밀번호</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">비밀번호</label>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-800 placeholder-gray-400 transition-all"
                 placeholder="비밀번호를 입력하세요"
               />
             </div>
 
-            {error && <div className="text-red-600 text-sm bg-red-50 p-2 rounded">{error}</div>}
+            {error && <div className="text-red-600 text-sm bg-red-50 p-4 rounded-xl border border-red-200">{error}</div>}
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 transition"
+              className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white py-4 rounded-2xl font-semibold hover:from-blue-600 hover:to-indigo-700 disabled:opacity-50 transition-all duration-300 shadow-lg shadow-blue-500/30 btn-press text-lg"
             >
               {loading ? '로그인 중...' : '로그인'}
             </button>
           </form>
 
-          <div className="mt-4 space-y-3">
+          <div className="mt-6 space-y-4">
             <div className="text-center">
               <button
                 onClick={() => { setView('employee-register'); setError('') }}
-                className="text-blue-600 hover:text-blue-800 text-sm"
+                className="text-blue-600 hover:text-blue-800 text-sm transition-colors"
               >
                 계정이 없나요? 회원가입
               </button>
             </div>
             
-            <div className="border-t pt-3">
-              <p className="text-xs text-gray-500 mb-2">💡 테스트 로그인</p>
+            <div className="border-t border-gray-100 pt-4">
+              <p className="text-xs text-gray-400 mb-3">💡 테스트 로그인</p>
               <button
                 type="button"
                 onClick={() => {
@@ -324,11 +354,12 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
                     handleEmployeeLogin(new Event('submit') as any)
                   }, 100)
                 }}
-                className="w-full bg-gray-200 text-gray-800 py-1.5 rounded text-sm hover:bg-gray-300 transition"
+                className="w-full bg-gray-100 text-gray-700 py-3 rounded-xl text-sm hover:bg-gray-200 transition-all border border-gray-200"
               >
                 테스트 계정으로 접속
               </button>
             </div>
+          </div>
           </div>
         </div>
       </div>
@@ -338,72 +369,88 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
   // 고용주 로그인
   if (view === 'employer-login') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-500 to-green-600">
-        <div className="bg-white rounded-lg shadow-xl p-8 w-96">
-          <button onClick={() => setView('selection')} className="text-gray-500 hover:text-gray-700 mb-4">
-            ← 뒤로
-          </button>
-          <h1 className="text-2xl font-bold text-center mb-6 text-gray-800">고용주 로그인</h1>
-
-          <form onSubmit={handleEmployerLogin} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">이메일</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                placeholder="이메일을 입력하세요"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">비밀번호</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                placeholder="비밀번호를 입력하세요"
-              />
-            </div>
-
-            {error && <div className="text-red-600 text-sm bg-red-50 p-2 rounded">{error}</div>}
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-green-600 text-white py-2 rounded-lg font-semibold hover:bg-green-700 disabled:opacity-50 transition"
-            >
-              {loading ? '로그인 중...' : '로그인'}
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 relative overflow-hidden p-4">
+        {/* Background decoration */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-green-400 rounded-full filter blur-3xl opacity-30 animate-pulse-slow"></div>
+          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-emerald-400 rounded-full filter blur-3xl opacity-30 animate-pulse-slow"></div>
+        </div>
+        
+        <div className="relative z-10 animate-fade-in w-full max-w-[420px]">
+          <div className="bg-white rounded-3xl shadow-2xl p-10 border border-gray-100">
+            <button onClick={() => setView('selection')} className="text-gray-500 hover:text-gray-800 mb-6 flex items-center gap-2 transition-colors">
+              <ArrowLeft size={20} />
+              <span>뒤로</span>
             </button>
-          </form>
-
-          <div className="mt-4 space-y-3">
-            <div className="text-center">
-              <button
-                onClick={() => { setView('employer-register'); setError('') }}
-                className="text-green-600 hover:text-green-800 text-sm"
-              >
-                계정이 없나요? 회원가입
-              </button>
+          
+            <div className="text-center mb-8">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-green-600 mb-4 shadow-lg shadow-emerald-500/30">
+                <Building2 size={32} className="text-white" />
+              </div>
+              <h1 className="text-2xl font-bold text-gray-800">고용주 로그인</h1>
+              <p className="text-gray-500 mt-2">매장 관리 시스템에 접속</p>
             </div>
-            
-            <div className="border-t pt-3">
-              <p className="text-xs text-gray-500 mb-2">💡 테스트 로그인</p>
+
+            <form onSubmit={handleEmployerLogin} className="space-y-5">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">이메일</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-gray-800 placeholder-gray-400 transition-all"
+                  placeholder="이메일을 입력하세요"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">비밀번호</label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-gray-800 placeholder-gray-400 transition-all"
+                  placeholder="비밀번호를 입력하세요"
+                />
+              </div>
+
+              {error && <div className="text-red-600 text-sm bg-red-50 p-4 rounded-xl border border-red-200">{error}</div>}
+
               <button
-                type="button"
-                onClick={() => {
-                  setEmail('employer@example.com')
-                  setPassword('password123')
-                  setTimeout(() => {
-                    handleEmployerLogin(new Event('submit') as any)
-                  }, 100)
-                }}
-                className="w-full bg-gray-200 text-gray-800 py-1.5 rounded text-sm hover:bg-gray-300 transition"
+                type="submit"
+                disabled={loading}
+                className="w-full bg-gradient-to-r from-emerald-500 to-green-600 text-white py-4 rounded-2xl font-semibold hover:from-emerald-600 hover:to-green-700 disabled:opacity-50 transition-all duration-300 shadow-lg shadow-emerald-500/30 btn-press text-lg"
               >
-                테스트 계정으로 접속
+                {loading ? '로그인 중...' : '로그인'}
               </button>
+            </form>
+
+            <div className="mt-6 space-y-4">
+              <div className="text-center">
+                <button
+                  onClick={() => { setView('employer-register'); setError('') }}
+                  className="text-emerald-600 hover:text-emerald-800 text-sm transition-colors"
+                >
+                  계정이 없나요? 회원가입
+                </button>
+              </div>
+            
+              <div className="border-t border-gray-100 pt-4">
+                <p className="text-xs text-gray-400 mb-3">💡 테스트 로그인</p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEmail('employer@example.com')
+                    setPassword('password123')
+                    setTimeout(() => {
+                      handleEmployerLogin(new Event('submit') as any)
+                    }, 100)
+                  }}
+                  className="w-full bg-gray-100 text-gray-700 py-3 rounded-xl text-sm hover:bg-gray-200 transition-all border border-gray-200"
+                >
+                  테스트 계정으로 접속
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -414,64 +461,78 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
   // 알바생 회원가입
   if (view === 'employee-register') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-500 to-blue-600">
-        <div className="bg-white rounded-lg shadow-xl p-8 w-96">
-          <button onClick={() => setView('employee-login')} className="text-gray-500 hover:text-gray-700 mb-4">
-            ← 뒤로
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-4 relative overflow-hidden">
+        {/* 배경 애니메이션 */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-400 rounded-full blur-3xl opacity-30 animate-pulse-slow" />
+          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-indigo-400 rounded-full blur-3xl opacity-30 animate-pulse-slow" style={{ animationDelay: '1s' }} />
+        </div>
+
+        <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-md animate-fade-in relative z-10 border border-gray-100">
+          <button onClick={() => setView('employee-login')} className="text-gray-500 hover:text-gray-800 mb-6 flex items-center gap-2 transition-colors">
+            <ArrowLeft size={20} />
+            <span>뒤로</span>
           </button>
-          <h1 className="text-2xl font-bold text-center mb-6 text-gray-800">알바생 회원가입</h1>
+          
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 mb-4 shadow-lg shadow-blue-500/30">
+              <UserPlus size={32} className="text-white" />
+            </div>
+            <h1 className="text-2xl font-bold text-gray-800">알바생 회원가입</h1>
+            <p className="text-gray-500 mt-2">새 계정을 만들어 시작하세요</p>
+          </div>
 
           <form onSubmit={handleEmployeeRegister} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">이름</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">이름</label>
               <input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-5 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-800 placeholder-gray-400 transition-all"
                 placeholder="이름을 입력하세요"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">이메일</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">이메일</label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-5 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-800 placeholder-gray-400 transition-all"
                 placeholder="이메일을 입력하세요"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">비밀번호</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">비밀번호</label>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-5 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-800 placeholder-gray-400 transition-all"
                 placeholder="비밀번호를 입력하세요"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">지점 코드</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">지점 코드</label>
               <input
                 type="text"
                 value={branchCode}
                 onChange={(e) => setBranchCode(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-5 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-800 placeholder-gray-400 transition-all"
                 placeholder="고용주에게 받은 지점 코드"
               />
             </div>
 
-            {error && <div className="text-red-600 text-sm bg-red-50 p-2 rounded">{error}</div>}
+            {error && <div className="text-red-600 text-sm bg-red-50 p-4 rounded-xl border border-red-200">{error}</div>}
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 transition"
+              className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white py-4 rounded-2xl font-semibold hover:from-blue-600 hover:to-indigo-700 disabled:opacity-50 transition-all duration-300 shadow-lg shadow-blue-500/30 btn-press text-lg mt-2"
             >
               {loading ? '가입 중...' : '회원가입'}
             </button>
@@ -484,53 +545,67 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
   // 고용주 회원가입
   if (view === 'employer-register') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-500 to-green-600">
-        <div className="bg-white rounded-lg shadow-xl p-8 w-96">
-          <button onClick={() => setView('employer-login')} className="text-gray-500 hover:text-gray-700 mb-4">
-            ← 뒤로
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 p-4 relative overflow-hidden">
+        {/* 배경 애니메이션 */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-emerald-400 rounded-full blur-3xl opacity-30 animate-pulse-slow" />
+          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-green-400 rounded-full blur-3xl opacity-30 animate-pulse-slow" style={{ animationDelay: '1s' }} />
+        </div>
+
+        <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-md animate-fade-in relative z-10 border border-gray-100">
+          <button onClick={() => setView('employer-login')} className="text-gray-500 hover:text-gray-800 mb-6 flex items-center gap-2 transition-colors">
+            <ArrowLeft size={20} />
+            <span>뒤로</span>
           </button>
-          <h1 className="text-2xl font-bold text-center mb-6 text-gray-800">고용주 회원가입</h1>
+          
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-green-600 mb-4 shadow-lg shadow-emerald-500/30">
+              <Store size={32} className="text-white" />
+            </div>
+            <h1 className="text-2xl font-bold text-gray-800">고용주 회원가입</h1>
+            <p className="text-gray-500 mt-2">매장을 등록하고 시작하세요</p>
+          </div>
 
           <form onSubmit={handleEmployerRegister} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">지점명</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">지점명</label>
               <input
                 type="text"
                 value={branchName}
                 onChange={(e) => setBranchName(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="w-full px-5 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-gray-800 placeholder-gray-400 transition-all"
                 placeholder="지점/매장 이름을 입력하세요"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">이메일</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">이메일</label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="w-full px-5 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-gray-800 placeholder-gray-400 transition-all"
                 placeholder="이메일을 입력하세요"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">비밀번호</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">비밀번호</label>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="w-full px-5 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-gray-800 placeholder-gray-400 transition-all"
                 placeholder="비밀번호를 입력하세요"
               />
             </div>
 
-            {error && <div className="text-red-600 text-sm bg-red-50 p-2 rounded">{error}</div>}
+            {error && <div className="text-red-600 text-sm bg-red-50 p-4 rounded-xl border border-red-200">{error}</div>}
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-green-600 text-white py-2 rounded-lg font-semibold hover:bg-green-700 disabled:opacity-50 transition"
+              className="w-full bg-gradient-to-r from-emerald-500 to-green-600 text-white py-4 rounded-2xl font-semibold hover:from-emerald-600 hover:to-green-700 disabled:opacity-50 transition-all duration-300 shadow-lg shadow-emerald-500/30 btn-press text-lg mt-2"
             >
               {loading ? '가입 중...' : '회원가입'}
             </button>
