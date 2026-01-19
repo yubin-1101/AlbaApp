@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import './App.css';
 import { Calendar } from './components/calendar/Calendar';
 import { ClockInOut } from './components/work/ClockInOut';

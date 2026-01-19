@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { QrCode, Camera, Clock, CheckCircle, XCircle, RefreshCw } from 'lucide-react'
 import QRCode from 'react-qr-code'
 

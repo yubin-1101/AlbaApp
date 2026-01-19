@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react'
 import { format, parseISO, differenceInMinutes, addDays, subMinutes, addMinutes } from 'date-fns'
 import { ko } from 'date-fns/locale'
 import { supabase } from '../lib/supabase'
-import { ChevronLeft, ChevronRight, Clock, Calendar, TrendingUp, X, Briefcase } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Clock, Calendar, TrendingUp, X } from 'lucide-react'
 
 // 데모 모드 확인
 const isDemoMode = () => {

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { format } from 'date-fns'
 import { supabase } from '../lib/supabase'
-import { Users, UserCheck, Clock, QrCode, CheckCircle, XCircle, UserPlus, Briefcase } from 'lucide-react'
+import { Users, UserCheck, Clock, QrCode, CheckCircle, XCircle } from 'lucide-react'
 
 // 데모 모드 확인
 const isDemoMode = () => {

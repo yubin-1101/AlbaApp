@@ -1,16 +1,5 @@
-import React, { useState, useEffect } from 'react'
-import { User, Mail, Building2, Calendar, Bell, Shield, ChevronRight, Edit3, Moon, Sun, LogOut, Clock, Award } from 'lucide-react'
-import { supabase } from '../lib/supabase'
-
-// 데모 모드 확인
-const isDemoMode = () => {
-  const user = localStorage.getItem('alba_user')
-  if (user) {
-    const userData = JSON.parse(user)
-    return userData.userId?.startsWith('demo-')
-  }
-  return false
-}
+import { useState, useEffect } from 'react'
+import { User, Mail, Building2, Calendar, Bell, Shield, ChevronRight, Edit3, Moon, Sun } from 'lucide-react'
 
 interface ProfileData {
   email: string

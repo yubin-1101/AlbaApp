@@ -1,5 +1,4 @@
-import React from 'react'
-import { Home, User, LogOut, Calendar, Users, LayoutDashboard, QrCode, Scan, Sparkles } from 'lucide-react'
+import { User, LogOut, Calendar, Users, LayoutDashboard, QrCode, Scan, Sparkles } from 'lucide-react'
 
 type UserRole = 'employee' | 'employer' | null
 

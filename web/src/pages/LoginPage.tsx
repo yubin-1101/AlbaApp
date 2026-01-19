@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { Users, Building2, ArrowLeft, UserPlus, Store, Sparkles } from 'lucide-react'
+import { Users, Building2, ArrowLeft, UserPlus, Store } from 'lucide-react'
 
 type UserRole = 'employee' | 'employer' | null
 
