@@ -1,64 +1,99 @@
-# Alba (알바)
+# 알바체크 - 웹 버전
 
-## 프로젝트 개요 ✅
-Alba는 소규모 알바/고용 관리 앱입니다. 모바일(Expo/React Native)과 웹(Vite/React)에서 동작하도록 구성되어 있으며, Supabase를 백엔드로 사용합니다.
+Vite + React + TypeScript로 구축한 웹 애플리케이션입니다.
 
----
+## 시작하기
 
-## 주요 기능 ✨
-- 사용자 인증(고용주, 직원) 및 회원가입
-- 근무 일정 조회 및 스케줄 관리
-- QR 코드 생성/스캔(출석 확인 등)
-- 게시판/커뮤니티(글 작성, 댓글)
-- 급여/정산 관련 화면 및 관리 기능
+### 설치
+```bash
+cd web
+npm install
+```
 
----
+### 환경변수 설정
+`.env.example`을 `.env.local`로 복사하고 Supabase 정보를 입력하세요:
 
-## 빠른 시작 🔧
-- 루트(모바일/공유 코드)
-  - 설치: `npm install` 또는 `yarn`
-  - 개발(Expo): `npm start` 또는 `yarn start` (스크립트: `expo start`)
-  - Android 에뮬레이터: `npm run android`
-  - iOS: `npm run ios`
+```bash
+cp .env.example .env.local
+```
 
-- 웹(frontend)
-  - 이동: `cd web`
-  - 설치: `npm install` 또는 `yarn`
-  - 개발: `npm run dev`
+### 개발 서버 실행
+```bash
+npm run dev
+```
 
-> 참고: 프로젝트가 Expo 환경을 사용하므로 Expo CLI가 필요할 수 있습니다.
+브라우저에서 `http://localhost:3000`을 열어주세요.
 
----
+### 빌드
+```bash
+npm run build
+```
 
-## 파일 구조 (중요 항목만 요약) 📁
-- `App.js`, `index.js` — 앱 진입점
-- `supabase.js` — Supabase 클라이언트 설정
-- `package.json` — 루트 스크립트(Expo), 의존성
-- `android/` — Android 네이티브 설정
-- `assets/` — 이미지 등 정적 자산
-- `screens/` — 모바일 전용 화면들 (React Native)
-- `src/` — 웹/공유 컴포넌트 및 로직
-  - `src/components/` — 재사용 가능한 UI 컴포넌트
-  - `src/App.tsx`, `index.tsx` — 웹 진입점
-- `web/` — 웹 전용 앱( Vite + React )
+빌드 결과는 `dist/` 폴더에 생성됩니다.
 
-루트의 SQL 스크립트들:
-- `add.sql`, `attendance.sql`, `branches.sql`, `daily_qrs.sql`, `functions.sql`, `policy.sql`, 등
-  - 용도: 마이그레이션, 쿼리 샘플, 백업 또는 수동 DB 작업용
-  - 현재 코드베이스(런타임)에서는 직접 참조되는 곳을 찾지 못했습니다. 즉, 런타임 실행에는 없어도 되는 파일일 가능성이 높습니다. 다만 CI/CD나 수동 운영절차에서 쓰일 수 있으니 삭제 전 백업을 권장합니다.
+## 기술 스택
 
----
+- **프레임워크**: React 18 + TypeScript
+- **빌드 도구**: Vite
+- **라우팅**: React Router v6
+- **스타일**: Tailwind CSS
+- **아이콘**: Lucide React
+- **백엔드**: Supabase
+- **인증**: Supabase Auth
 
-## 주의/추천 사항 ⚠️
-- 삭제 전: `git branch`를 생성하거나 파일을 `archive/` 폴더로 이동해 **테스트** 후 완전 제거하세요.
-- DB 초기화 스크립트가 있다면(또는 팀 문서에 명시되어 있다면) 해당 프로세스를 확인하세요.
-- 프로젝트 전반 검색: VS Code 전역 검색(또는 `rg/grep`)으로 `.sql`이나 파일명을 검색하면 참조 여부를 더 확실히 알 수 있습니다.
+## 주요 기능
 
----
+- 사용자 인증 (회원가입/로그인)
+- 대시보드 (근무 통계)
+- 프로필 관리
+- 반응형 UI (모바일/데스크톱)
 
-## 기여 및 연락 ✉️
-- 간단한 변경은 Git 브랜치 생성 → PR로 진행하세요.
+## 폴더 구조
 
----
+```
+web/
+├── public/           # 정적 파일
+├── src/
+│   ├── components/   # React 컴포넌트
+│   ├── pages/        # 페이지 컴포넌트
+│   ├── lib/          # 유틸리티 및 설정
+│   ├── App.tsx       # 메인 앱 컴포넌트
+│   ├── main.tsx      # 엔트리 포인트
+│   └── index.css     # 글로벌 스타일
+├── package.json
+├── vite.config.ts
+├── tsconfig.json
+└── tailwind.config.js
+```
 
-간단한 README 초안입니다. 원하시면 영어 버전으로도 만들어 드리거나, 세부 설치/환경(Expo SDK, Node 버전, 환경 변수 등)을 추가할게요.
+## 배포
+
+### Vercel 배포 (권장)
+
+1. GitHub에 레포지토리 푸시
+2. [Vercel](https://vercel.com)에서 프로젝트 연결
+3. 환경변수 설정
+4. 자동 배포
+
+### GitHub Pages 배포
+
+```bash
+npm run build
+# dist 폴더의 내용을 GitHub Pages로 배포
+```
+
+## 환경변수
+
+필수 환경변수:
+- `VITE_SUPABASE_URL`: Supabase 프로젝트 URL
+- `VITE_SUPABASE_ANON_KEY`: Supabase Anon Key
+
+## 개발 팁
+
+- HMR(Hot Module Replacement)을 활용한 빠른 개발
+- TypeScript를 활용한 타입 안정성
+- Tailwind CSS를 활용한 빠른 스타일링
+
+## 라이센스
+
+MIT
