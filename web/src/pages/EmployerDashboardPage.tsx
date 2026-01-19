@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { format } from 'date-fns'
 import { supabase } from '../lib/supabase'
 import { Users, UserCheck, Clock, QrCode, CheckCircle, XCircle } from 'lucide-react'

@@ -175,23 +175,18 @@ function EmployeeQRView() {
   }
 
   const handleClockAction = (type: 'clock-in' | 'clock-out') => {
-    setClockType(type)
     setScanning(true)
-    
     // 데모: 2초 후 성공 처리
     setTimeout(() => {
       const now = new Date()
       const timeStr = formatTime(now)
       const today = now.toISOString().split('T')[0]
-      
       const newRecord = {
         ...todayRecord,
         [type === 'clock-in' ? 'clockIn' : 'clockOut']: timeStr
       }
-      
       setTodayRecord(newRecord)
       localStorage.setItem(`attendance_${today}`, JSON.stringify(newRecord))
-      
       setResult({
         success: true,
         message: type === 'clock-in' 
@@ -203,7 +198,6 @@ function EmployeeQRView() {
   }
 
   const resetState = () => {
-    setClockType(null)
     setResult(null)
     setScanning(false)
   }
