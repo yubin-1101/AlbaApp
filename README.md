@@ -16,14 +16,14 @@ Alba는 소규모 알바/고용 관리 앱입니다. 모바일(Expo/React Native
 
 ## 빠른 시작 🔧
 - 루트(모바일/공유 코드)
-  - 설치: `npm install` 또는 `yarn`
+  - 설치: `npm install` 
   - 개발(Expo): `npm start` 또는 `yarn start` (스크립트: `expo start`)
   - Android 에뮬레이터: `npm run android`
   - iOS: `npm run ios`
 
 - 웹(frontend)
   - 이동: `cd web`
-  - 설치: `npm install` 또는 `yarn`
+  - 설치: `npm install`
   - 개발: `npm run dev`
 
 > 참고: 프로젝트가 Expo 환경을 사용하므로 Expo CLI가 필요할 수 있습니다.
