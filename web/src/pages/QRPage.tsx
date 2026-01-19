@@ -133,7 +133,6 @@ function EmployerQRView() {
 
 // 알바생용 QR 스캐너 뷰
 function EmployeeQRView() {
-  const [clockType, setClockType] = useState<'clock-in' | 'clock-out' | null>(null)
   const [scanning, setScanning] = useState(false)
   const [result, setResult] = useState<{ success: boolean; message: string } | null>(null)
   const [todayRecord, setTodayRecord] = useState<{ clockIn: string | null; clockOut: string | null }>({

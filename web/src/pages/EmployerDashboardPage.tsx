@@ -73,7 +73,7 @@ export default function EmployerDashboardPage() {
       if (branchError) throw branchError
       if (!branchData) throw new Error('지점 정보가 없습니다.')
 
-      const { id: branchId, branch_code } = branchData
+      const { branch_code } = branchData
       setBranchCode(branch_code)
 
       // Fetch all employees
